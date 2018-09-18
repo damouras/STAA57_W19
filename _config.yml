@@ -1,5 +1,8 @@
 theme: minima
 
+title: STAA57 Introduction to Data Science 
+github_username: damouras 
+
 header_pages:
   - project.md
   - lectures.md
