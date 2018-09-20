@@ -3,7 +3,6 @@ layout: home
 ---
 
 
-## Welcome to STAA57 Introduction to Data Science
 
 The course will teach you the basic concepts, tools, and techniques for answering questions using data. In particular, you will learn how to effectively arrange, manipulate, and visualise data, how to draw conclusions and how to make predictions based on data. 
 
