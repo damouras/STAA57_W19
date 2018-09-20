@@ -2,25 +2,14 @@ theme: minima
 title: STAA57 Introduction to Data Science 
 github_username: damouras 
 
-tabs: 
-    tab1:
-        name: lectures
-        title: Page One
-        source: source1
-        content: >
-            ## Headline
+docs_list_title: Course Material
+docs:
 
-            This is the content of the second tab, it is defined in the frontmatter as **markdown**.
+- title: Lectures
+  url: lectures.html
 
-            A Link: [link](https://foo.bar.org)
+- title: Assignments
+  url: assignments.html
 
-    tab2:
-        name: assignments
-        title: Page Two
-        source: source2
-        content: >
-            ## Headline
-
-            This is the content of the second tab, it is defined in the frontmatter as **markdown**.
-
-            A Link: [link](https://foo.bar.org)
+- title: Project
+  url: project.html
