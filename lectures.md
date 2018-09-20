@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Lectures
+title: lectures
 permalink: /lectures/
 ---
 
