@@ -15,23 +15,21 @@
 # in the templates via {{ site.myvariable }}.
 title: STAA57 Introduction to Data Science
 email: sdamouras@utsc.utoronto.ca
-baseurl: "" # the subpath of your site, e.g. /blog
-url: "" # the base hostname & protocol for your site, e.g. http://example.com
 github_username: damouras
 
 # Build settings
 markdown: kramdown
 theme: minima
 
-docs_list_title: Navigation
+# docs_list_title: Navigation
 
-docs:
+# docs:
 
-- title: Syllabus
-  url: syllabus.md
+# - title: Syllabus
+  # url: syllabus.md
 
-- title: Lectures
-  url: lectures.md
+# - title: Lectures
+  # url: lectures.md
   
 # Exclude from processing.
 # The following items will not be processed, by default. Create a custom list
