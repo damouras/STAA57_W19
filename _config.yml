@@ -21,7 +21,7 @@ github_username: damouras
 
 # Build settings
 markdown: kramdown
-theme: minima
+theme: jekyll-theme-minimal
 
 docs_list_title: Navigation
 
