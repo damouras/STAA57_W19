@@ -14,22 +14,25 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 title: STAA57 Introduction to Data Science
+author: Sotirios Damouras
 email: sdamouras@utsc.utoronto.ca
-github_username: damouras
+# description: STAA57 course material from Winter 2019.
+# baseurl: "" # the subpath of your site, e.g. /blog
+# url: "" # the base hostname & protocol for your site, e.g. http://example.com
+# twitter_username: jekyllrb
 
 # Build settings
-theme: jekyll-theme-minimal
+markdown: kramdown
+theme: minima
+# plugins:
+  # - jekyll-feed
 
-# docs_list_title: Navigation
-
-# docs:
-
-# - title: Syllabus
-  # url: syllabus.md
-
-# - title: Lectures
-  # url: lectures.md
-  
+header_pages:
+ - syllabus.md
+ - resources.md
+ - lectures.md
+ - project.md
+ 
 # Exclude from processing.
 # The following items will not be processed, by default. Create a custom list
 # to override the default setting.

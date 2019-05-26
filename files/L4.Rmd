@@ -1,0 +1,157 @@
+---
+title: "L4 - Data Transformation & Summarization"
+author: "Sotirios Damouras"
+output: 
+  ioslides_presentation:
+    transition: 0
+    logo: img/logo.png
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+dinesafe = read_csv("../data/dinesafe.csv")
+```
+
+
+## Lecture Goals 
+
+- Learn how to:
+    + Transform data
+    + Summarize data 
+    + Perform these operations by groups
+ 
+- Readings 
+    + [R4DS](http://r4ds.had.co.nz/): ch. 5.5-5.7, 12, 18
+    + Data Wrangling [cheatsheet](https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf)
+
+
+## Manipulating Data 
+
+- Often need to *modify* original data (i.e. apply functions)
+
+- Two basic types of functions
+![](img/window_vs_summary.PNG)
+    + **Window functions** operate *across rows/observations*; take in vectors and return (same size) vectors 
+    + **Summary functions** operate *over columns/variables*; take vectors and return single values  
+    
+   
+## Transforming Data 
+
+- `mutate()` appends new variable/column to data
+![](img/mutate.png) 
+    + `transmute()` only keeps new variable 
+
+```{r, include=FALSE}
+my_df = data_frame( V1=1:3, V2=c("a","b","c"), V3=c(F,T,F))
+mutate(my_df, V4= V1+V3)
+transmute(my_df, V4= V1+1)
+``` 
+
+## Transforming Data
+
+- Window functions use *vectorised operations* 
+```{r, collapse = TRUE}
+data_frame(V1=1:3) %>% transmute(V2=V1*(1:2))
+```
+
+## Example
+
+- Use `mutate()` + `replace()` to change/fix data values
+
+```{r, collapse = TRUE}
+data_frame(V1 = 1:3, V2 = c("a","N/A","b")) %>% 
+  mutate(V2 = replace(V2, V2=="N/A", NA) ) %>% 
+  mutate(V1 = replace(V1, V2=="a", 5) ) 
+```
+
+
+## Summarising Data
+
+- `summarise()` creates new data-frame with summary value(s)
+![](img/summarise.png) 
+
+- E.g. number of distinct restaurants inspected 
+```{r, collapse = TRUE}
+dinesafe %>% 
+  filter(ESTABLISHMENTTYPE == "Restaurant") %>% 
+  summarise(n_dist_rest = n_distinct(ESTABLISHMENT_ID))
+```
+
+## Example
+
+- Finding range of inspection dates
+
+```{r, collapse = TRUE}
+range(dinesafe$INSPECTION_DATE)
+dinesafe %>% summarise( MIN_DATE = min(INSPECTION_DATE),
+                        MAX_DATE = max(INSPECTION_DATE))
+```
+
+## Grouping 
+
+- Apply summary functions to **groups**, i.e. subsets of data 
+![](img/group_by.PNG) 
+    + Result contains *group indentifier*, i.e. unique group values
+
+```{r, include=FALSE}
+my_df = data_frame( V1=1:5, V2=c("a","b","c","a","b"), V3=c(F,T,F,T,T))
+my_df %>% group_by(V2) %>% summarise(M=mean(V1))
+``` 
+
+- `group_by()` does not alter data
+    + `ungroup()` removes grouping
+
+## Example
+
+```{r, collapse = TRUE}
+my_df %>% group_by(V2) %>% slice(1)
+
+my_df %>% group_by(V2) %>% ungroup() %>% slice(1)
+``` 
+
+## Example
+
+- Number of inspections by establishment type
+```{r, collapse = TRUE}
+dinesafe %>% 
+  group_by(ESTABLISHMENTTYPE) %>% 
+  summarise( n_distinct(ESTABLISHMENT_ID) )
+```
+
+
+
+## Multiple Grouping
+
+- Grouping on *multiple* variables
+    + Each *unique combination* becomes a group
+    + Each summary operation *removes* last grouping variable
+
+![](img/myltigroup.PNG)
+
+```{r, include=FALSE}
+my_df = data_frame( V1=1:5, V2=c("a","b","c","a","b"), V3=c(F,T,F,T,T))
+my_df %>% group_by(V2,V3) %>% summarise(M=mean(V1))
+my_df %>% group_by(V2,V3) %>% summarise(M=mean(V1)) %>% summarise(MM=mean(M))
+``` 
+
+## Multiple Grouping
+
+
+```{r, collapse = TRUE}
+my_df %>% group_by(V2,V3) %>% summarise(M=mean(V1))
+
+my_df %>% group_by(V2,V3) %>% summarise(M=mean(V1)) %>% 
+  summarise(MM=mean(M))
+``` 
+
+## Transforming with Groups
+
+- Summary functions can be used inside window functions, with vectorisation and *recycling*
+
+```{r, collapse = TRUE}
+my_df %>% group_by(V2) %>%
+  mutate( group_percent = V1 / sum(V1))
+``` 

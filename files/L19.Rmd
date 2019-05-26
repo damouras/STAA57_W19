@@ -1,0 +1,284 @@
+---
+title: "L19 - Overfitting"
+author: "Sotirios Damouras"
+output:
+  ioslides_presentation:
+    transition: 0
+    logo: ../img/logo.png
+---
+
+<!-- 
+output: html_notebook
+-->
+
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(rpart)
+library(rpart.plot)
+library(modelr)
+library(broom)
+wdbc = read_csv("data/wdbc.csv")
+set.seed(9876)
+```
+
+## Lecture Goals 
+
+- Understand in-/out-of-sample performance
+    + Measure performance in train & test sets
+- Prevent overfitting by
+    + Penalizing model complexity
+    + Using (cross) validation
+
+- Readings    
+    + [ISLR](https://www-bcf.usc.edu/~gareth/ISL/ISLR%20Seventh%20Printing.pdf) ch. 5.1
+
+## Assessing Performance 
+
+- So far, we have chosen classifiers with *optimal* performance on *already available* data
+    + A.k.a. **in-sample** performance
+
+- What we *really* want is classifiers with optimal performance on *new data* 
+    + A.k.a. **out-of-sample** performance
+    
+- E.g., memorization (NN) classifier has 100% accuracy on available data!
+    + Do you trust it to prefectly classify new data?  
+
+## Out-of-Sample Performance
+
+- **Estimate** out-of-sample performance by running model on *unused* data
+    
+- Split avaialable data into **trainging** and **test sets**
+     + Train/select model based on training set
+     + Estimate performance by applying model to test set
+
+
+- *No modelling decisions* should be made based on test set 
+     + Otherwise performance estimate is *biased (optimistic)* 
+     
+## WDBC Data 
+
+- Split WDBC data (80% train - 20% test) and measure classification tree accuracy
+
+```{r, collapse = TRUE}
+train = wdbc %>% sample_frac(.8) 
+test = wdbc %>% setdiff( train )
+rpart_out = rpart(diagnosis ~ . - id, data = train)
+
+train %>% add_predictions(rpart_out, type = "class") %>%
+  summarise( accuracy = mean( pred == diagnosis) ) %>% pull()
+
+test %>% add_predictions(rpart_out, type = "class") %>% 
+  summarise( accuracy = mean( pred == diagnosis) ) %>% pull()
+```
+
+
+## Overfitting 
+
+- Out-of-sample performance expected to be worse than in-sample
+    + Performance decline related to **model complexity**
+    + More complex models tend to do worse out-of-sample 
+
+- **Overfitting**: model closely describes available data, but *fails to generalise* to new data
+    + Memorising noise instead of learning underlying structure 
+    + Must be cautious about performance expectations
+    
+
+## Model Complexity 
+
+- Model complexity related to *amount of tuning/choices* model permits
+
+![](img/black_box.PNG)
+
+
+## Overfitting and Model Complexity 
+
+![](img/overfitting_complexity.PNG)
+
+
+## Model Selection 
+
+- *Statistical Learning conundrum*: choose model based on *available data*, but want it to perform well on *unseen data*
+    + In-sample performance favors overfitting
+      
+- Two practical ways to prevent overfitting 
+    + **Validation** 
+    + **Regularization**
+    
+
+## WDBC Data
+
+- Tree with 100% in-sample accuracy
+```{r, fig.height=4, fig.width=6}
+big_tree = rpart( diagnosis ~ . - id, data = train, 
+               control = rpart.control(minsplit = 1, cp = 0) )
+rpart.plot(big_tree)
+```
+
+
+## Validation Set
+
+- Split data into training, validation, and test set
+    + Fit competing models on training set
+    + Select model based on validation set
+    + Assess performance on test set
+ 
+![](img/train_validate_test.PNG)
+
+
+## WDBC Data
+
+- Select tree model (# splits) with best validation performance
+
+```{r, echo = FALSE}
+class.error = function(x){ 1 - sum(diag(x))/sum(x)}
+N=30; cp = seq(0, .1, length = N)
+plot.df = tibble( splits = integer(N),
+                      in.err = numeric(N),
+                      out.err = numeric(N) )
+                      
+for(i in 1:N){
+  temp = prune( big_tree, cp = cp[i], minsplit = 1 )
+  plot.df$splits[i] = tail(temp$cptable[,"nsplit"],1) 
+  plot.df$in.err[i] = train %>%  
+    mutate( predicted = predict(temp, type = "class") ) %>% 
+    select(diagnosis, predicted) %>% table() %>% prop.table() %>% class.error()
+  plot.df$out.err[i] = test %>%  
+    mutate( predicted = predict(temp, newdata = test, type = "class") ) %>% 
+    select(diagnosis, predicted) %>% table() %>% prop.table() %>% class.error()
+}
+
+plot.df %>% 
+  distinct() %>% 
+  gather( "type", "error", in.err:out.err ) %>% 
+  ggplot( aes(x = splits, y = error, col = type)) + geom_line(lwd=1) + 
+  scale_color_discrete( labels = c( "training", "validation") ) + 
+  xlab("# of splits")
+```
+
+
+## Cross-Validation
+
+- *Cross-Validation (CV)* repeatedly partitions data into training & validation sets
+    + Iterations called *folds* 
+- Estimate performance by *averaging* error accross all folds
+    
+![](img/CV.PNG)    
+    
+## WDBC Data
+
+- CV performed by default in `rpart()`
+
+```{r, collapse = TRUE}
+big_tree$cptable
+```
+
+## WDBC Data
+
+
+```{r, echo=FALSE}
+as_tibble(big_tree$cptable ) %>% 
+  mutate( up = xerror + xstd, down = xerror - xstd) %>% 
+  ggplot( aes(x = nsplit, y = xerror)) + geom_line(lwd=1) +
+  geom_errorbar( aes(ymax = up, ymin = down), lwd=1 ) +
+  xlab("# of splits") + ylab("relative error")
+```
+
+
+## Regularization 
+
+- Regularization is another way to estimate out-of-sample performance
+
+- Regularization imposes **penalty on model complexity** 
+    + Choose model that minimizes   
+    $$\text{(training error) + (complexity penalty)}$$
+
+- Form of complexity penalty can vary
+     + Specify based on theoretical results or cross-validation 
+
+## WDBC Data
+
+```{r, echo = FALSE }
+plot.df %>% distinct() %>% 
+  mutate( penalty = .006 * splits ) %>% 
+  mutate( reg.err = in.err + penalty ) %>% 
+  gather( "type", "error", 2:5 ) %>% 
+  ggplot( aes(x = splits, y = error, col = type)) + geom_line(lwd=1) + 
+  scale_color_discrete( labels = c( "training", "validation", "complexity", "training + complexity") ) + 
+  xlab("# of splits")
+```
+
+
+
+## Regularization 
+
+- For WDBC tree model
+    + Training Error: 1 - accuracy
+    + Complexity Penalty: $cp$ * (# splits)
+
+- Select model (*optimal* $cp$) based on 
+    + Minimum CV error, or 
+    + *Simplest* model within one st.dev. of min. CV error  
+
+## WDBC data
+
+```{r, collapse=TRUE}
+as_tibble(big_tree$cptable ) %>%
+  mutate( pick = (xerror <  min(xerror) + xstd ) )
+```
+
+
+## WDBC data
+
+```{r, collapse=TRUE}
+final_tree = prune(big_tree, cp = .006) 
+test %>% add_predictions( final_tree, type = "class") %>% 
+  mutate( pred = fct_relevel(pred, "M"),
+          diagnosis = fct_relevel(diagnosis, "M") ) %>% 
+  xtabs( ~ pred + diagnosis, data = .) %>% prop.table() 
+```
+
+## WDBC data
+
+
+```{r, echo=FALSE}
+rpart.plot(final_tree)
+```
+
+
+## Recipe for Statistical Learning 
+
+- Split data into training/training+validation & test set
+    
+- Fit models of different complexity on training set
+
+- Choose *optimal* model complexity using regularization/cross-validation
+
+
+- Estimate out-of-sample performance of *final* model on test set 
+  
+
+
+
+<!-- 
+
+## Validation
+
+
+
+
+    + If used for selection, estimate is *biased*
+
+```{r, echo = FALSE}
+plot.df %>% distinct() %>% 
+  gather( "type", "error", in.err:out.err ) %>% 
+  mutate( N = ifelse( type == "in.err", nrow(train), nrow(test) )) %>% 
+  mutate( up = error + sqrt( error * (1-error) / N ) ) %>% 
+  mutate( down = error - sqrt( error * (1-error) / N ) ) %>% 
+  ggplot( aes(x = splits, y = error, col = type)) + geom_line() + 
+  geom_errorbar( aes(ymax = up, ymin = down) ) +
+  scale_color_discrete( labels = c( "training", "validation") ) + 
+  xlab("# of splits")
+```
+
+-->

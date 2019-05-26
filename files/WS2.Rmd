@@ -1,0 +1,56 @@
+---
+title: "STAA57 - WorkSheet 2"
+date: "  "
+author: "Name:    , ID#:   "
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+*Goal*: Practice R basics through a simulation experiment.
+
+
+Certain (dubious) websites advertise various roulette strategies. One example is the martingale strategy, whereby:
+
+You start placing a small bet, say $1, on low/high (i.e. 1:18/19:36)
+If you lose, you double-down (i.e. you bet double the previous amount)
+If you win, you stop
+
+If you are allowed to raise your bets *indefinitely*, you can show that you will *eventually* win. Casinos know that, so they have *limits* on the amounts you can bet. We will use simulation to estimate the *expected gain/loss* of such a strategy, assuming a [European-style roulette](https://en.wikipedia.org/wiki/Roulette#Roulette_table_layout) (i.e. single-zero) and a \$1,000 bet limit. *Without loss of generality*, assume we play low/high (equivalently, red/black, odd/even) and always bet on high (19:36). We will first simulate a single sequence of bets (roulette tosses), and then try to scale up to multiple sequences *without using loops*.
+
+1. Use the `sample()` function to generate a vector of 10 random roulette spins, i.e. a sequence of 10 numbers randomly selected from 0 to 36. Use `spins = sample( ..., replace = TRUE )`.  
+
+```{r}
+spins = sample( x = 0:5, size = 3 )
+```
+
+
+Note: We used a sequence of 10 spins since that is the maximum number of possible bets in one iteration of the strategy: an initial bet of \$1, and a maximum of 9 double-downs before hitting the \$1,000 limit ($2^9=512$ but $2^{10}=1024$).
+
+2. Tranform the `spins` vector into a *logical* vector of `wins`: use a comparison operator to check if the spin was from 19 to 36.
+
+3. Check whether there was *any* win in the 10 bets: use function `any()`.
+
+If you win *any* of the 10 bets your net gain is always \$1. E.g if you win the 1st bet it is obvious, if you lose the first bet (\$1) and win the 2nd bet (\$2) you have 2-1=\$1, if you lose the first two bets (\$1 & \$2) and win the 3rd bet (\$4) you have 4-2-1=\$1, etc. But if you lose all 10 bets your net loss is very big, at -\$1023!  
+
+4. Verify that the net loss is -1023, by summing up all the bet amounts: create a vector of 2 raised to the powers of 0 to 9, and then sum it up.  
+
+By now, you have simulated the gain/loss of a *single iteration* of the strategy. We need to simulate many iterations in parallel, and calculate the *average gain/loss*. 
+
+5. Let $N$ denote the number of iterations and set it to 100,000. Simulate $N \times 10$ spins and arrange them into a $N$-by-$10$ matrix: use `matrix(..., nrow = ...)`. Then transform the `spins` matrix into a logical `wins` matrix. 
+
+6. For each iteration (row) of the strategy, you want to check if there was any win or not: use the `apply()` function, to apply `any()` over the rows of the `wins` matrix (the result should be a logical vector of length $N$).
+
+7. Create a vector `GL` with the gain/loss of each iteration: use `ifelse()` together with the logical vector from the previous part, to get +1 when there is any win, -1023 when there is a loss. 
+
+8. Calculate the average gain/loss over all iterations: use `mean()`. 
+
+9. Run `plot( cumsum( GL), type ="l" )` to plot the *cumulative* gain/loss of the martingale strategy, over the number of times (1 to $N$) it is employed.
+
+10. [Extra] Make your code faster by simulating the logical `wins` matrix *directly*, i.e. without simulating any roulette spins first: use `sample()` with the `prob` argument.
+

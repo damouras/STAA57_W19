@@ -1,0 +1,51 @@
+---
+title: "STAA57 - WorkSheet 9"
+author: 'Name:    , ID#:   '
+output: html_notebook
+---
+
+*** 
+
+**Goal**: Practice statistical concepts and sampling methods.
+
+```{r, include=FALSE}
+library(tidyverse)
+dinesafe = read_csv("../data/dinesafe.csv")
+```
+
+For the next questions assume the *population* consists of all infraction details (rows) in the `dinesafe` data.
+
+1. Assume you are interested in the average number of significant/crucial infractions per establishment (SEVERITY equal to "S - Significant" or "C - Crucial"). Find the actual value of the parameter.  
+
+2. Estimate the parameter using SRS of size $n=150$, where your sampling frame is all *establishments* in the dinesafe data.
+
+The function `replicate()` can be used to run an expression multiple times and return its results in a matrix, one column for each replication. E.g. the following command replicates sampling 5 values from the `letters` vector 10 times. The result is a 5-by-10 matrix, where each row contans the sampled letters.
+
+```{r}
+letters
+replicate( 10, sample( letters, size = 5 ) ) 
+```
+
+3. Use `replicate()` to repeat the establishment sampling process 200 times. Plot a histogram of the resulting statistics (avg # of S/C-type infractions per establishment) and overlay it with the parameter value (use `geom_vline()`). Do the samples look biased? Justify your answer.
+
+4. Collect a *convenience* sample by choosing all establishments whose address is on Kingston road, and caclulate the sample statistic. Briefly explain what can go wrong with approach?  
+
+
+5. Consider the following two survey reports published by the City of Toronto.
+* [Survey 1: Toronto Employment](https://www.toronto.ca/wp-content/uploads/2018/03/95b8-Toronto-Employment-Survey-2017-Bulletin.pdf)
+* [Survey 2: Living in the City](https://www.toronto.ca/legdocs/mmis/2018/pg/bgrd/backgroundfile-110520.pdf)
+
+The first few pages (p. 1 & 3) contain information on the survey. Read them and fill in the following table as well as you can. If you cannot find the relevant information for a field you can leave it blank. The last row is about your personal assessment of the survey.  
+
+| Area | Survey 1 | Survey 2 |
+| --- | --- | --- | 
+Target population | |  |
+Sampling frame | | | 
+Sample size | | | 
+Response rate | | | 
+Possible issues | | | 
+
+
+6. [Extra] Read about two interesting cases of sampling surveys that went terribly wrong!  
+* [Case 1](https://www.math.upenn.edu/~deturck/m170/wk4/lecture/case1.html)  
+* [Case 2](https://www.math.upenn.edu/~deturck/m170/wk4/lecture/case2.html)  

@@ -1,0 +1,290 @@
+---
+title: "L2 - R Basics"
+author: "Sotirios Damouras"
+output: 
+  ioslides_presentation:
+    transition: 0
+    logo: img/logo.png
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Lecture Goals 
+
+- Learn basic elements of the R language
+    + Data types
+    + Basic objects
+    + Functions
+    + Classes and attributes 
+    + Subsetting Objects
+    + Loops
+ 
+- Readings 
+    + [R4DS](http://r4ds.had.co.nz/): ch. 4
+    + [HOPR](https://d1b10bmlvqabco.cloudfront.net/attach/ighbo26t3ua52t/igp9099yy4v10/igz7vp4w5su9/OReilly_HandsOn_Programming_with_R_2014.pdf): ch. 1-3
+    + [Datacamp](https://www.datacamp.com/courses/free-introduction-to-r): online tutorial
+    
+## R Philosophy 
+
+- Information is contained in **objects**
+    + E.g. data, variables, models, plots
+
+- Operations are performed by **functions**
+    + E.g. sorting data, fitting models, plotting results
+    + Caveat: functions are objects as well
+    
+- Carry out analysis by applying functions to objects, creating new objects along the way
+
+
+## Data Types 
+
+| Name  | Description  | Examples  |
+|---|---|---|
+| Logical  |  binary | TRUE, FALSE |
+| Integer | round numbers  | 1L,  45L|  
+| Numeric  |  any number |  1.234, 1e+3 |
+| Character  |  text | "R rocks!" |
+| Complex | complex numbers | 1 + 2i |
+| Raw   | bytes |  41 5a | 
+
+
+## Basic Objects
+![](img/Robjects.PNG)
+
+## Functions
+
+* Functions create/modify objects according to arguments
+    + E.g. Generate sequence from 3 to 5, increasing by .5    
+```{r, collapse = TRUE }
+seq( from = 3, to = 5, by = .5)
+```
+
+- *Create* functions using `function()` 
+```{r, collapse = TRUE }
+my_fun = function( x, y = 1 ){
+  z = x^2
+  return(z + y)
+}
+my_fun(x=3)
+```
+
+## Basic Functions
+
+- R comes with set of pre-installed functions
+     - More functions can be added with packages 
+     - Run `help(fun)` or `? fun` to get documentation
+- Arguments can be other functions' output
+     - Inner functions evaluated first  
+```{r, collapse = TRUE }
+rep( x = "blah", times = 2)
+rep( x = rep("ha", 2), times = 2)
+```
+    
+## Vectors
+
+- Create vectors with `c()` concatenation function 
+    + Name & store your objects with an assignment operator (`<-` or `=`)
+
+```{r, collapse = TRUE } 
+c(0, 1, 2) 
+my_first_vector <- c("a", "b", "c")
+my_first_vector
+```
+
+
+## Identifying Objects
+
+-  `class` function identifies object type
+```{r, collapse = TRUE } 
+class( c(0, 1, 2) )
+```
+
+- Whenever possible, R will *automatically convert types*, from specific to
+     general (logical > integer > numeric > character)
+```{r, collapse = TRUE } 
+class( c(TRUE, 3.14, "R") )
+```
+
+## Special Values
+
+| Value  | Description  | Use  |
+|---|---|---|
+| NA  |  not available | missing value |
+| NULL  | null object | represent "nothing" |
+| (+/-)Inf | infinity  numbers  | 1/0 |  
+| NaN  |  not a number |  0/0 |
+
+<br>
+
+```{r, collapse = TRUE }
+c(NA, NULL, Inf, Inf/Inf)
+```
+
+
+## Arithmetic Operators 
+
+|Operator | Description | Example |
+|-----|-----|-----|
+| `+` | addition | 1 + 1 (=2) |
+| `-` | subtraction | 1 - 1 (=0) |
+| `*` | multiplication | 2 * 3 (=6) |
+| `/` | division | 4 / 2 (=2) |
+| `^` | exponentiation | 2^3 (=8) |
+| `%%` | modulo | 5 %% 2 (=1) |
+| `%/%` | integer division | 5 %/% 2 (=2) |
+
+## Element-Wise Operations
+
+- R performs operations **element-wise**, automatically **recycling** smaller vectors
+
+
+![](img/element-wise.png) 
+```{r, collapse = TRUE }
+(1:6) + (1:2)
+```
+
+
+## Factors  
+
+- Vectors used to store **categorical** data: categories described by *character* labels but represented by *integers*
+     
+```{r, collapse = TRUE }
+f <- factor( c("male", "female", "female", "male") )
+class(f)
+typeof(f)  # object's storage type 
+str(f)     # object's structure
+```
+
+## Indexing & Subsetting
+
+- **subsetting**: extracting required object values using *integer* or *logical* **indices** in square brackets `[ ]`
+```{r, collapse = TRUE }
+x <- c("a", "b", "c")
+x[2]
+x[1:2]
+x[ c(T, F, T) ]
+```
+
+## Logical Tests 
+
+|Operator	| Description | Example |
+|----|----|----|
+| `<` (`<=`) | less (less or equal) to | 3 < 2 (=FALSE) 
+| `>` (`>=`) | greater (greater or equal) to | 2 >= 2 (=TRUE)
+|`==` |	exactly equal to | 1 == 1 (=TRUE)
+|`!=` |	not equal to | 1 != 1 (=FALSE)
+|`%in%` |	belongs to | 1 %in% (1:3)  (=TRUE)
+
+
+## Logical Operators
+
+|Operator	| Description | Example |
+|----|----|----|
+|`!` |	logical negation | !TRUE (=FALSE)
+|`|`	| logical OR | TRUE \| FALSE (=TRUE) 
+|`&`	| logical AND | TRUE & FALSE (=FALSE)
+| any | multiple OR | any(T, F, F) (=TRUE)
+| all | multiple AND | all(T, F, F) (=FALSE)
+
+
+## Matrices 
+
+- Tables of the *same* data type 
+``` {r, collapse = TRUE }
+matrix( data = 1:6, nrow = 3 )
+matrix( 1:6, ncol = 3, byrow = TRUE )
+```
+
+
+## Multivariate Subsetting
+
+- Subset arrays using multiple indexes (one for each dimension) separated by commas
+     + Empty index selects *all elements*   
+
+```{r, collapse = TRUE }
+matrix(1:4, 2)
+matrix(1:4, 2) [1, ]
+```
+
+## Names
+
+- Object can have *name* attributes, also used for indexing 
+```{r, collapse = TRUE }
+mat <- matrix(1:6, nrow = 3)
+rownames(mat) <- paste(1:3)
+colnames(mat) <- c("a", "b")
+mat
+mat["1","a"]
+```
+
+
+## Lists
+
+- Lists are 1D **inhomogeneous** objects
+- Create lists with `list()` function
+
+```{r, collapse = TRUE }
+my_list <- list("a", 1:3, NULL, NA) 
+class(my_list)
+my_list
+
+```
+
+## List Elements
+
+- Lists can have **named** elements
+- Check list **structure** with `str()` 
+
+
+```{r, collapse = TRUE }
+my_list <- list( num = 1:5, let = c("a", "b"), log = c(T, F, T) ) 
+str(my_list)
+names(my_list)
+
+```
+
+
+## Indexing & Subsetting Lists
+
+- Extract **sub-lists** using `[ ]`
+- Extract **list elements** using `[[ ]]`, or by name with `$` 
+
+```{r, collapse = TRUE }
+my_list <- list( num = 1:5, let = c("a", "b"), log = c(T, F, T) ) 
+my_list[1]
+my_list[[1]]
+my_list$num
+```
+
+## Data Frames
+
+- Lists of inhomogenous vectors of **same length**
+     - Designated way of storing data tables in R  
+```{r, collapse = TRUE }
+my_df <- data.frame( age = c(21, 38, 41), sex = c("M", "F", "M") ) 
+str(my_df)
+dim(my_df)
+```
+
+
+## Conditionals and Loops
+
+- Execute code conditionally 
+```{r, collapse = TRUE }
+if( runif(1) >= .5 ){ 
+  print("Heads")
+  }else{ print("Tails") }
+```
+
+- Repeat task(s) for each element of input object
+    
+```{r, collapse = TRUE }
+for(i in c("a", "b")){ 
+  print(i)
+}
+```
+
+
+

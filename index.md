@@ -1,6 +1,8 @@
 ---
+# Feel free to add content and custom Front Matter to this file.
+# To modify the layout, see https://jekyllrb.com/docs/themes/#overriding-theme-defaults
+
 layout: home
 ---
 
-This course teaches the basic concepts, tools, and techniques for answering questions using data. 
-In particular, you will learn how to effectively organize, manipulate, and visualise data, how to draw conclusions and how to make predictions based on data. 
+This website contains course material for STAA57 *Introduction to Data Science* from Winter 2019.

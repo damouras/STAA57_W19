@@ -1,0 +1,161 @@
+---
+title: "L20 - More Classification"
+author: "Sotirios Damouras"
+output:
+  ioslides_presentation:
+    transition: 0
+    logo: ../img/logo.png
+
+---
+<!-- 
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+
+-->
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(rpart)
+library(rpart.plot)
+set.seed(123)
+```
+
+## Lecture Goals 
+
+- Learn how to
+    + Perform multi-class classification     
+    + Use ensemble methods to prevent overfitting   
+    + Handle imbalanced classes   
+
+<br>
+- Readings: 
+    + [ISLR](https://www-bcf.usc.edu/~gareth/ISL/ISLR%20Seventh%20Printing.pdf) ch 4.3.5, 8.2
+
+## Multi-Class Classification
+
+- Output variable (Y) takes a value from *three or more categories*
+    + E.g. optical character recognition (OCR)
+
+- Some methods naturally handle multiple classes; others can be adapted from binary classification
+
+- *Ordinal classification* is different
+    + E.g. *rating scale*: poor to excellent
+    + Typically threshold *numerical* $Y$ variable 
+
+
+## Wine Data 
+
+- Chemical analysis of 3 *cultivars* of wine
+
+```{r, message=FALSE, collapse = TRUE}
+wine = read_csv("data/wine.csv") %>% 
+  mutate( cultivar = factor(cultivar))
+glimpse(wine)
+```
+
+## Classification Tree 
+
+- Same as before, with each part assigned *majority class* as its prediction 
+
+```{r, echo = FALSE, results='hide' }
+wine %>% ggplot(aes(x = OD280, y = proline, col = cultivar))+
+  geom_point(size = 2) +
+  geom_vline( xintercept = 2.47, lty = 2, lwd = 1.2) +
+  geom_segment( x=2.47, xend=4.3, y = 726.5, yend = 726.5, 
+                col = "black", lty = 2, lwd = 1.2)
+```
+
+## Wine Data 
+
+```{r, warning = FALSE}
+wine %>% rpart(cultivar ~ ., data = .) %>% rpart.plot()
+```
+
+## Multiclass from Binary 
+
+- *One-vs-Rest*: fit one binary classifier per class to distinguish it from other classes 
+    + Classify point based on outcome of *all* models: e.g. assign to class with highest probabilty
+
+![](img/one_vs_rest.PNG)
+
+## Multinomial Logistic Regression
+
+- Fix reference category, and fit (# class) -1 logistic regressions
+     + E.g. fit B vs A, and C vs A models
+
+```{r, collapse=TRUE}
+library(nnet)
+(mltn_out = multinom(cultivar ~ ., data = wine, trace = FALSE))
+```
+
+
+## Multinomial Logistic Regression
+
+- At each point, model outputs class probabilities
+    + Predict most likely class
+
+```{r, collapse = TRUE}
+tibble(mltn_out$fitted.values, predict(mltn_out)) %>% sample_n(5)
+```
+
+## Ensemble Methods
+
+- *Ensemble* idea: combine *multiple models* to improve performance
+
+    
+- Use ensemble methods to 
+    + Reduce overfitting for complex models (*bagging*)
+    + Increase flexibility of simple models (*boosting*)
+
+ 
+- Look at **bagging** (bootstrap aggregating) for classification trees
+
+
+## Bagging
+
+- Fit multiple models to *resampled* data (bootstrap)
+    + Sample *both* observations & variables (rows & columns)
+
+![](img/bagging_train.PNG)
+
+## Bagging
+
+- *Combine* their results (aggregating) through majority vote
+![](img/bagging_predict.PNG)
+
+
+## Random Forest 
+
+- Bagged trees called *Random Forests*
+
+```{r, message = FALSE, warning = FALSE, collapse=TRUE}
+library(randomForest)
+(rf_out = randomForest( cultivar ~ ., data = wine, ntree= 500 ))
+```
+
+## Random Forest Error
+
+- *Out-of-bag (OOB) error*: error on *unsampled* observations 
+      + Out-of-sample performance measure (similar to CV)
+      + Used for choosing # of trees in forest
+      
+```{r, echo = FALSE, fig.height=4, fig.width=5}
+tibble( OOB_err = rf_out$err.rate[,"OOB"], N_trees = 1:500) %>% 
+  ggplot(aes(x = N_trees, y = OOB_err)) + geom_line()
+```
+
+
+
+## Imbalanced Classification
+
+- Classification models do not perform well when classes are severely  *imbalanced*  
+    + E.g. Binary classification with <5% positives; just predicting majority class gives high accuracy (95%) 
+
+- Simple way to address problem with resampling
+    + Oversample minority class, or
+    + Undersample majority class
+
+- Fit model to balanced (resampled) data, and use it on original data
+
+

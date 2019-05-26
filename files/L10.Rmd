@@ -1,0 +1,213 @@
+---
+title: "L10 - Estimation  "
+author: "Sotirios Damouras"
+
+output:
+  ioslides_presentation:
+    transition: 0
+    logo: img/logo.png
+
+
+---
+
+<!-- 
+
+output: html_notebook 
+
+output:
+  ioslides_presentation:
+    transition: 0
+    logo: img/logo.png
+
+-->
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+library(tidyverse)
+set.seed(123)
+```
+
+
+## Lecture Goals 
+
+- Understand fundamentals of statistical estimation
+    + Sampling distribution
+    + Point & interval estimates
+- Apply resampling methods for estimation 
+    + Bootstrap confidence intervals
+
+- Readings 
+    + [ISRS](https://www.openintro.org/download.php?file=isrs1_tablet&referrer=/stat/textbook.php): ch. 4.5
+    + [ModernDive](https://moderndive.com/9-confidence-intervals.html): ch. 9 
+
+## Estimation
+
+- Interested in **estimating** value of parameter based on sample
+
+- Specific sample gives *one* out of all possible statistic values
+
+![](./img/sampling_dist.PNG)    
+
+## Estimation
+
+- In reality, don't know **sampling distribution**, i.e. how statistic values are dispersed
+
+![](./img/sampling_dist2.PNG)    
+
+- Can only control two things 
+    + *Sampling method*: randomness prevents bias
+    + *Sample size*: higher $n$ improves accuracy 
+
+
+## Labour Force Survey Data
+
+- [*Labour Force Survey*](https://www150.statcan.gc.ca/n1/pub/71-543-g/71-543-g2018001-eng.htm) (LFS): monthly survey providing crucial employment information 
+    + Used to calculate *unemployment rates*
+
+- Access [LFS *microdata*](http://sda.chass.utoronto.ca/sdaweb/html/lfs.htm) (individual responses) through UofT's [CHASS Data Centre](http://datacentre.chass.utoronto.ca/)
+
+- File `LFS_Toronto.csv` contains 2018 LFS data for Toronto's Census Metropolitan Area (CMA)
+```{r, collapse=TRUE, message=FALSE}
+lfs = read_csv('./data/LFS_Toronto.csv') 
+```
+
+
+## Example
+
+- Estimate Toronto unemployment rate: $\frac{\textrm{# unemployed}}{\textrm{# labour force}}$ 
+- Employment status given by variable `lfsstat`
+    + 1, 2: employed (working/on leave)
+    + 3: unemployed
+    + 4: Not in labour force
+
+```{r}
+lfs %>% summarise( UNEMPL = sum(lfsstat == 3) / sum(lfsstat != 4) )
+```
+
+## Estimation
+
+- Statistic gives *single value*, a.k.a. **point estimate**
+
+- Point estimates don't convey information about *accuracy* 
+    + How close to parameter do we *expect* statistic to be?
+    + Need information on *sampling distribution/variability* 
+    
+- Two ways to assess sampling distribution
+    + *Analytical*: uses Probability Theory 
+    + *Resampling*: uses sampling from the sample 
+
+
+## Bootstrap
+
+- **Bootstrap method**: resample original SRS sample, where
+    + Each resample has **same size** as original sample
+    + Each resample is randomly selected **with replacement**
+  
+![](./img/resampling.PNG)
+
+- Calculate statistic for each bootstrap sample (i.e. resample), and treat them as values from sampling distribution 
+
+
+## Example
+
+- Use `infer` package to bootstrap data-frames
+    + `specify()` selects variable(s)
+    + `generate()` resamples data
+    + `calculate()` calculates statistic
+ 
+```{r, warning=FALSE}
+library(infer)
+lfs_boot = lfs %>% filter( lfsstat %in% 1:3) %>%
+  mutate( unemployed = (lfsstat == 3) ) %>%
+  specify( response = unemployed, success = "TRUE" ) %>%
+  generate( reps = 500, type = "bootstrap" ) %>%
+  calculate( stat = "prop" ) %>% rename( UNEMPL = stat )
+save(lfs_boot, file = "./data/lfsboot.R")
+```
+
+
+## Example
+
+```{r, fig.width = 7, fig.height=5, echo=FALSE}
+estimate = lfs %>% 
+  summarise( UNEMPL = sum(lfsstat == 3) / sum(lfsstat != 4) ) %>% pull()
+  
+load("./data/lfsboot.R")
+
+lfs_boot %>% ggplot( aes(x=UNEMPL) ) + 
+  geom_histogram( bins = 30, fill = "grey") + 
+  geom_vline( aes(xintercept = estimate, linetype = "estimate"), lwd = 1) +
+  scale_linetype_manual(name = "",values=c("estimate"=2))
+```
+
+
+## Confidence Intervals
+
+- **Confidence Interval** (CI): interval computed based on sample in such a way that it *contains* parameter for specific *proportion* of all samples
+- **Confidence level**: proportion of samples whose interval contains parameter
+     + Controls CI *width*; typically set at 95% 
+
+![](./img/confidence_interval.PNG)
+
+
+## Example 
+
+- 95% CI for Toronto unemployment rate
+
+```{r}
+(CI = lfs_boot %>% summarise( lower = quantile(UNEMPL, .025),
+                              upper = quantile(UNEMPL, .975)))
+```
+
+## Example 
+
+```{r, fig.width = 7, fig.height = 5, warning=FALSE, echo=FALSE}
+lfs_boot %>% ggplot( aes(x=UNEMPL) ) + 
+  geom_histogram( bins = 30, fill = "grey") + 
+  geom_vline( aes( xintercept = estimate, linetype = "estimate"), lwd = 1 ) +
+  geom_vline( aes( xintercept = CI$lower, linetype = "95% CI"), lwd = 1 ) +
+  geom_vline( aes( xintercept = CI$upper, linetype = "95% CI"), lwd = 1 ) +
+  scale_linetype_manual(name = "",values=c("estimate"=2,"95% CI"=3))
+```
+
+## CI's and Standard Errors
+
+- Most sampling distributions are symmetric with single peak around mean
+
+- In such cases, common to construct CI as: $\textrm{point estimate }\pm\textrm{ margin of error}$
+     + **Margin of error** (CI half-width) reflects estimation accuracy
+
+- For 95% confidence level, margin of error is *approximately* twice the **standard error** (SE)
+    + SE given by *standard deviation* of bootstrap samples, which measures the "average distance" from their mean 
+
+
+
+    
+## Example 
+
+- 95% CI for Toronto unemployment rate
+
+```{r, collapse = TRUE}
+# margin of error
+(ME = (CI$upper - CI$lower)/2)
+
+# standard error
+(SE = sd( lfs_boot$UNEMPL ))
+2*SE
+```
+
+## Example 
+
+```{r, fig.width = 7, fig.height=5, warning=FALSE, echo=FALSE}
+lfs_boot %>% ggplot( aes(x=UNEMPL) ) + 
+  geom_histogram( bins = 30, fill = "grey") + 
+  geom_vline( aes( xintercept = estimate), lty = 2, lwd = 1 ) +
+  geom_vline( aes( xintercept = CI$lower, linetype = "quantile"), lwd = 1 ) +
+  geom_vline( aes( xintercept = CI$upper, linetype = "quantile"), lwd = 1 ) +
+  geom_vline( aes( xintercept = estimate - 2*SE, linetype = "std error"), lwd = 1 ) +
+  geom_vline( aes( xintercept = estimate + 2*SE, linetype = "std error"), lwd = 1 ) +
+  scale_linetype_manual(name = "CI type",values=c("estimate" = 2, "quantile"=3, "std error"=4))
+```

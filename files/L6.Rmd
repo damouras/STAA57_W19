@@ -1,0 +1,206 @@
+---
+title: "L6 - Data Visualization"
+author: "Sotirios Damouras"
+output:  
+  ioslides_presentation:
+    transition: 0
+    logo: img/logo.png
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(gapminder)
+dinesafe = read_csv("data/dinesafe.csv") 
+```
+
+
+## Lecture Goals 
+
+- Learn how to:
+    + Explore data visualy
+    + Create layered graphs w/ `ggplot2`
+    
+- Readings 
+    + [R4DS](http://r4ds.had.co.nz/): ch. 3, 7
+    + Data Visualization [cheatsheet](https://www.rstudio.com/wp-content/uploads/2015/05/ggplot2-cheatsheet.pdf)
+
+## Data Visualization 
+
+- Communicate information *graphically* through plots, charts, maps, etc.
+
+- High-level plot description based on *layered  grammar of graphics*
+    + Create plots by overlaying *geometric objects* on same coordinates
+    
+- R package `ggplot2` implements such grammar for creating plots in R 
+
+
+    
+## Graph Structure
+
+- Basic ingredients
+     + **Data** 
+     + **Aesthetic Mappings** 
+     + **Geometric Objects** (lines, points, text, etc)
+- Extras      
+     + *Statistics*
+     + *Scales*
+     + *Facets*
+     + Other adjustments (coordinates, annotations, positions)
+
+## Graph Structure
+
+![](img/ggplot-grammar-of-graphics-stack-1.png)
+  
+## Aesthetic Mappings
+
+- Geometric objects convey information through their *aesthetics* (i.e. perceived characteristics)
+  
+- Data variable(s) can be *mapped* to one or more aesthetics
+
+- Common aesthetic mappings 
+    - *Location*: x/y coordinates
+    - *Appearance*: size, color, shape, etc
+
+
+## Gapminder Data
+
+* [Gapminder Foundation](https://www.gapminder.org/) is non-profit organization promoting world-wide social, economic and environmental development *through the use of data and statistics*
+    + Excellent source of information about state of the world
+
+* `gapminder` package provides excerpt of available [data](https://www.gapminder.org/data/)  
+
+```{r, collapse = TRUE}
+library(gapminder); glimpse(gapminder)
+```
+    
+## Plotting in `ggplot2`
+
+- Basic syntaxt  
+```ggplot( data, aes(...) ) + geom_*() + ... ```  
+
+```{r, fig.width=5, fig.height=3}
+gap07 = gapminder %>% filter( year == "2007")
+ggplot(gap07, aes(x = continent)) + geom_bar() 
+```
+
+## Top 5 Plots 
+
+* *Barplot* (`geom_bar`)
+* *Histogram* (`geom_histogram`)
+* *Boxplot* (`geom_boxplot`)
+* *Scatterplot* (`geom_point`)
+* *Line plot* (`geom_line`)
+ 
+| Variable   |  N/A | discrete | continuous | (time)
+| --- | --- | --- | --- | --- | 
+| discrete | bar | (bar) | box |   |
+| continuous  | hist | box | points | line | 
+
+
+## Barplot 
+
+- Compare values of *discrete* variable 
+    + Often used for counts/sums across groups
+
+```{r, fig.width=5, fig.height=3}
+gap07 %>% group_by(continent) %>% 
+  summarise( pop = sum( as.numeric(pop) ) ) %>% 
+  ggplot(aes(x = continent, y = pop)) + geom_bar(stat = "identity")
+```
+
+## Histogram 
+
+- Describe distribution of *continuous* variable
+
+```{r, fig.width=5, fig.height=3}
+ggplot(gap07, aes(x = lifeExp)) + geom_histogram(bins = 20)
+```
+
+## Boxplot
+
+- Compare distributions of continuous variable across levels of discrete variable
+
+```{r, fig.width=5, fig.height=3}
+ggplot(gap07, aes(x = continent, y = lifeExp)) + geom_boxplot()
+```
+
+## Boxplot
+
+- Describe continuous distribution using *5-point-summary*
+
+![](img/5pt_summary.PNG)
+
+
+## Scatterplot
+
+* Look at relationship between two continuous variables
+
+```{r, fig.width=5, fig.height=3}
+ggplot(gap07, aes(x = gdpPercap, y = lifeExp)) + geom_point()
+```
+
+
+## Line Plot
+
+* For data with *serial structure* (e.g. time series)
+
+```{r, fig.width=5, fig.height=3}
+gapminder %>% group_by(year) %>% 
+  summarise( world_pop = sum(as.numeric(pop))) %>% 
+  ggplot(aes(x = year, y = world_pop)) + geom_line()
+```
+
+
+
+
+
+## Statistics
+
+- Original data can be *transformed* through `stat` function   
+```{r, fig.width=5, fig.height=3}
+ggplot(gap07, aes(x = continent, y = pop) ) + 
+  stat_summary(fun.y = "sum", geom = "bar") 
+```
+
+
+## Scales 
+
+- Scales control *range* of aesthetic mappings. 
+
+```{r, fig.width=5, fig.height=3}
+ggplot(gap07, aes(x = continent, y = gdpPercap) ) + 
+  geom_boxplot() + scale_y_log10()
+```
+
+## Faceting
+
+- Create grid of sub-plots, one for each level of a variable
+
+```{r, fig.width=5, fig.height=3}
+ggplot(gap07, aes(x = gdpPercap, y = lifeExp)) + geom_point() +
+  facet_wrap( facets = ~ continent)
+```
+
+## Positional Adjustments
+
+* Using *positional adjustments* for bars
+
+```{r, fig.width=5, fig.height=3}
+gapminder %>% filter( year > 1985 ) %>% 
+  mutate( year = as.factor(year), pop = as.numeric(pop) ) %>% 
+  group_by(year, continent) %>% summarise(pop = sum(pop) ) %>% 
+  ggplot(aes(x = continent, y = pop, fill = year)) + 
+  geom_bar(stat = "identity", position = "dodge")
+```
+
+
+## Coordinates
+
+- Manipulate (fix, flip, transform) coordinates
+
+```{r, fig.width=5, fig.height=3}
+ggplot(gap07, aes(x = continent, y = pop) ) + 
+  stat_summary(fun.y = "sum", geom = "bar") + 
+  coord_flip()
+```

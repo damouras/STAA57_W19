@@ -1,0 +1,253 @@
+---
+title: "L9 - Statistical Sampling  "
+author: "Sotirios Damouras"
+output:
+  ioslides_presentation:
+    transition: 0
+    logo: img/logo.png
+---
+
+<!-- 
+
+output: html_notebook 
+
+output:
+  ioslides_presentation:
+    transition: 0
+    logo: img/logo.png
+
+-->
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+dinesafe = read_csv("../data/dinesafe.csv") 
+```
+
+
+## Lecture Goals 
+
+- Understand fundamental concepts of statistical inference
+    + Population vs Sample 
+    + Parameter vs Statistic
+    + Sampling Variability & Bias 
+- Apply basic sampling strategies 
+    + Simple and Stratified Random Sampling
+
+
+- Readings 
+    + [ISRS](https://www.openintro.org/download.php?file=isrs1_tablet&referrer=/stat/textbook.php): ch. 1.3-1.4
+
+
+## Why Statistics?
+
+- Goal: answer questions about a **population**
+    + Population: collection of *all objects of interest* (actual or notional)
+    + E.g. What is average age of people living in Canada?
+    
+- *Precise* answer for entire population requires **census**
+    + E.g. Ask *everyone* living in Canada (cost ~$700mil!)
+    + Typically either impracticable or impossible
+
+- Alternatively *sample* the population 
+
+
+## Sampling 
+
+- **Sample** is subset of population that helps answer question  *"approximately"*   
+![](./img/population_sample.PNG)
+
+- Answer quality depends critically on how sample is collected 
+
+
+##  Parameters & Statistics
+
+- Answers typically expressed as statements about summary measure of interest 
+    + **Parameter**: summary of entire population
+    + **(Sample) Statistic**: summary of sample
+
+![](./img/parameter_statistic.PNG)
+
+
+## Notation
+
+- Continuous Variables
+
+|  Description | Parameter | Statistic | 
+| --- | --- | --- |
+| Mean/Avg | $\mu$ | $\hat{\mu}/\bar{X}$ | 
+| Std Deviation | $\sigma$ | $S$ | 
+| Median | $\mu_{1/2}$ | $M$ | 
+
+- Discrete Variables
+
+|  Description | Parameter | Statistic |
+| --- | --- | --- |
+| Proportion | $p$ | $\hat{p}$ | 
+
+
+## Example
+
+- Dinesafe data: interested in average number of inspections per establishment
+
+```{r, message=FALSE, collapse=TRUE}
+pop = dinesafe %>% 
+  group_by(ESTABLISHMENT_ID) %>% 
+  distinct(INSPECTION_ID) %>% 
+  summarise( N_INSPECTIONS = n() ) 
+pop %>% summarise( mean(N_INSPECTIONS) ) 
+pop %>% sample_n(100) %>% summarise( mean(N_INSPECTIONS) )
+```
+
+
+## Variability
+
+- Statistic value varies with different samples 
+    + **Sampling variability** is extent to which statistics diverge from their mean
+
+- Sampling variability can be controlled by the **sample size** ($n$)
+    + Larger $n$ $\rightarrow$ lower variability (higher accuracy)
+
+![](./img/sampling_variability.PNG)
+
+## Example
+
+- Distribution of statistics (avg # of inspections) of different sample sizes
+
+```{r, echo = FALSE, fig.width=7, fig.height=4 }
+parameter = pop %>% summarise( mean(N_INSPECTIONS) ) %>% pull()
+n_reps = 1000
+statistics = matrix(0, nrow = n_reps, ncol = 2)
+for(i in 1:n_reps){
+  sample_vector = sample(pop %>% pull(N_INSPECTIONS), 100)
+  statistics[i,1] = mean( sample_vector )
+  statistics[i,2] = mean( sample_vector[1:10] )
+}
+colnames(statistics) = c("n = 100","n = 10")
+statistics %>% as.tibble() %>% 
+  gather( "size", "statistic", 1:2) %>% 
+  ggplot( aes(x = statistic, fill = size) ) +
+  geom_density( alpha = .5 ) + 
+  geom_vline( xintercept = parameter, lty = 2 ) +
+  geom_text( x = 3.4, y = .2, label = "parameter", hjust = -0.1 )
+
+```
+
+
+## Bias
+
+- Statistic changes with different samples, so how do we pick our sample?
+
+- Regularities in sampling can lead to **bias**, i.e. systematic deviation of statistic from parameter
+    + E.g. collect data by email only
+    
+- To avoid selection bias & improve representativeness, most sampling methods involve **randomness**
+
+
+
+## Simple Random Sampling 
+
+- **Sampling frame**, i.e. list of available objects for sampling
+    + Ideally covers entire population 
+
+- **Simple Random Sample (SRS)**: every object sampled *randomly and with equal probability*
+    + Avoids bias when no other information is available 
+    + Average of *all* SRS averages equal to population average
+   
+![](./img/SRS.PNG)
+
+
+## Example
+
+- Distribution of statistics from different sampling frames (SRS, $n=100$)
+
+```{r, echo=FALSE, fig.width=7, fig.height=4 }
+pop2 = dinesafe %>% 
+  filter( ESTABLISHMENTTYPE == "Restaurant") %>% 
+  group_by(ESTABLISHMENT_ID) %>% 
+  distinct(INSPECTION_ID) %>% 
+  summarise( N_INSPECTIONS = n() ) 
+
+n_reps = 1000
+statistics = matrix(0, nrow = n_reps, ncol = 2)
+for(i in 1:n_reps){
+  statistics[i,1] = mean( sample(pop %>% pull(N_INSPECTIONS), 100) )
+  statistics[i,2] = mean( sample(pop2 %>% pull(N_INSPECTIONS), 100) )
+}
+colnames(statistics) = c("all establishments","restaurants")
+statistics %>% as.tibble() %>% 
+  gather( "frame", "statistic", 1:2) %>% 
+  ggplot( aes(x = statistic, fill = frame) ) +
+  geom_density( alpha = .5, position =  ) + 
+  geom_vline( xintercept = parameter, lty = 2 )+
+  scale_fill_discrete(name = "sampling frame") +
+  geom_text( x = 3.4, y = .2, label = "parameter", hjust = -0.1 )
+
+```
+
+
+## Potential Problems 
+
+- Randomness alone is not enough for representativeness
+    + Must pay attention to sampling details
+    
+Two common sources of bias are:
+
+- **Participation or Non-response bias**: *respondents* are not representative of entire population
+   
+- **Coverage bias**: sampling frame does not align well with population
+
+
+## Stratified Sampling 
+
+- Population often divided into groups, called *strata*
+
+- **Stratified Sampling** combines SRS from every straturm to ensure representation 
+     + Samples proportional to strata sizes
+
+![](./img/stratified_RS.PNG)
+
+## Example
+
+```{r, echo = FALSE, fig.width=6, fig.height=3.5 }
+pop3 = dinesafe %>% 
+  group_by(MINIMUM_INSPECTIONS_PERYEAR, ESTABLISHMENT_ID) %>% 
+  distinct(INSPECTION_ID) %>% 
+  summarise( N_INSPECTIONS = n() ) 
+
+n_reps = 1000
+NN=integer(n_reps)
+statistics = matrix(0, nrow = n_reps, ncol = 2)
+for(i in 1:n_reps){
+  statistics[i,1] = pop %>% sample_frac(0.004) %>% pull(N_INSPECTIONS) %>% mean()
+  strat.sample = pop3 %>% group_by(MINIMUM_INSPECTIONS_PERYEAR) %>%
+    sample_frac(0.004) %>% pull(N_INSPECTIONS)
+  NN[i]=length(strat.sample)
+  statistics[i,2] = mean( strat.sample )
+}
+
+colnames(statistics) = c("SRS","Stratified by min Insp/Year")
+statistics %>% as.tibble() %>% 
+  gather( "method", "statistic", 1:2) %>% 
+  ggplot( aes(x = statistic, fill = method) ) +
+  geom_density( alpha = .5, position =  ) + 
+  geom_vline( xintercept = parameter, lty = 2 )
+
+pop3 %>% group_by(MINIMUM_INSPECTIONS_PERYEAR) %>% 
+  summarise(mean(N_INSPECTIONS), n()) 
+
+```
+
+## Observational vs Experimental Studies 
+
+- **Observational studies** collect data by *observing* what happens (no intervention)
+     + E.g. survey sampling, polls, etc. 
+
+- **Experiments** collect data after *manipulating* aspects of the process
+     + E.g. drug testing 
+
+- Observational studies are used for *descriptions* (what *is* happening), whereas experiments are used for *decisions* (what *should* be done)
+     
+

@@ -1,0 +1,66 @@
+---
+title: "STAA57 - WorkSheet 8"
+author: 'Name:    , ID#:   '
+output: html_notebook
+---
+
+**Goal**: Extract XML/HTML data from the web.
+
+The City of Toronto's Open Data portal provides data in various formats, both tabular (CSV, XLS) and hierarchical (XML, JSON). For the next questions, we will look at data on festivals & events that appear on the city's calendar (see [here]((https://www.toronto.ca/city-government/data-research-maps/open-data/open-data-catalogue/#21dd820d-dc7f-73d5-a6f0-6368b70a1b6f) 
+) for more details).  
+
+
+1. Historical data on the city's festivals and events are provided in the XML file: https://www.toronto.ca/ext/open_data/catalog/data_set_files/Festivals_and_Events_v9_fromArchivedb.xml    
+Use the `xml2` package to read the file into R, and use `xml_child()` and `xml_structure()` to print the structure of the first child element of the XML document.
+
+```{r}
+```
+
+The structure of the XML document is shown below:
+![](./img/xml_fevents.PNG)   
+The root node \<viewentries\> contains several \<viewentry\> elements, where each \<viewentry\> element represents a festival or event . Within each \<viewentry\> there are multiple \<entrydata\> elements with different *name* attributes that represent the field/variable name. And within each \<entrydata\> there is one or more \<text\> elements containing the field value(s).  
+
+
+2. Extract all event names, i.e. all \<text\> values from \<entrydata\> elements with attribute *name*='EventName'.
+
+```{r}
+```
+
+3. Extract all event names and locations (*name*='Location') and combine them in a single dataframe. Then find the distinct names of all events whose location is 'Nathan Phillips Square'.
+
+```{r}
+```
+
+
+We are now going to extract data on "Data Scientist" jobs from Workopolis. Notice that every result has a full description that can be presented on the right side of the page.
+![](./img/workopolis.PNG)   
+The HTML element for each job title contains a link to this description as an *href* attribute:
+```
+<a class="JobCard-titleLink" ... href="/jobsearch/viewjob/PNCqvtT4md..." > 
+... </a>
+```
+4. Read the HTML document of all "Data Scientist" positions in Toronto, and extract the URL with the full job description; save the results in a character vector.
+
+```{r}
+```
+
+5. Open and inspect the first link in your web-browser; note that you have to add "https://www.workopolis.com" at the beginning of each *href* string. Then, read the HTML document of this link in R, and extract the job description text.
+
+```{r}
+```
+
+6. Go over all job links (use a `for` loop) and extract all job descriptions. Compare the number of times that "R" vs "Python" is mentioned in the description to find the most popular language (use string functions & regular expressions). 
+
+```{r}
+
+```
+
+
+7. [EXTRA] Note that the webpage (https://www.workopolis.com/jobsearch/find-jobs?ak=data+scientist&l=Toronto%2C) only shows the first 29 search results, but there are more results pages that you can visit through the links at the bottom.  
+![](./img/resultsPages.PNG)   
+So, if you want to collect information for *all* job postings, you have to visit each results page separately. You can access different results pages by adding a simple string to the URL; e.g. to access the 3rd results page, add `&pn=3` at the end of the web address:  
+(https://www.workopolis.com/jobsearch/find-jobs?ak=data+scientist&l=Toronto%2C+ON&pn=3)
+Use this approach, together with a `while()` loop, to collect the job titles and companies of *all* search results. 
+
+
+

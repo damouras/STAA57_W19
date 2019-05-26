@@ -1,0 +1,209 @@
+---
+title: "L15 - Multiple Regression"
+author: "Sotirios Damouras"
+output:
+  ioslides_presentation:
+    transition: 0
+    logo: img/logo.png
+
+---
+
+<!-- 
+output: html_notebook 
+
+output:
+  ioslides_presentation:
+    transition: 0
+    logo: img/logo.png
+
+-->
+
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(broom)
+set.seed(123)
+fcr = read_csv("../data/2018 Fuel Consumption Ratings.csv")
+```
+
+## Lecture Goals 
+
+- Use *multiple* explanatory variables in regression 
+    + Employ numerical & categorical variables
+    + Interpret main & interaction effects
+    + Manipulate factor variables 
+
+- Readings 
+    + [R4DS](https://r4ds.had.co.nz): ch. 23.4-5
+    + [ISRS](https://www.openintro.org/download.php?file=isrs1_tablet&referrer=/stat/textbook.php): ch. 6.1-3
+
+## Data 
+
+- Car fuel consumption data 
+     + Available from Gov't of Canada [open data](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64)
+
+![](img/enerGuide.PNG)
+
+## Two Explanatory Variables
+
+- CO2 emissions vs Engine Size & # of Cylinders
+
+![](./img/CO2_ENG_CYL.PNG)
+
+
+## Multiple Linear Regression
+
+- Model response as *linear* function of *multiple* explanatory variables
+    
+$$y_i = \alpha + \beta_1 x_{1,i} + \beta_{2}x_{2,i} + \cdots + \epsilon_i$$
+    
+- Find parameters by minimizing squared errors (MSE)
+
+- Linear functions represented by planes in 3D
+    + Hyperplanes in higher dimensions 
+
+
+## Example
+
+```{r,collapse=TRUE}
+library(broom)
+lm( CO2_EMISSIONS ~ ENGINE_SIZE + CYLINDERS, data = fcr) %>% tidy()
+```
+
+- Interpretation (*main effects*): 
+    + For 1L engine increase, CO2 emission increase by 21.71133gr/km, *irrespective* of # of cylinders
+    + For each extra cylinder, CO2 emission increase by 10.87955gr/km, *irrespective* of engine size
+
+## Assessing Fit
+
+```{r, include=FALSE}
+lm_out = lm( CO2_EMISSIONS ~ ENGINE_SIZE + CYLINDERS, data = fcr)
+```
+
+- Check *residuals* VS *fitted values* (want no patterns)
+    
+```{r, fig.width=6.5, fig.height=4}
+lm_out %>% augment() %>% ggplot(aes(x = .fitted, y = .resid)) + 
+  geom_point() + geom_hline( yintercept = 0)
+```
+
+## Categorical Variables
+
+- Include *categorical* variable in model 
+    + Fit separate *mean* for each category (similar to ANOVA)
+
+```{r, collapse=TRUE}
+( lm_out = fcr %>% filter(MAKE %in%  c("FORD", "HONDA", "VOLKSWAGEN")) %>% 
+  lm( CO2_EMISSIONS ~ ENGINE_SIZE + MAKE - 1, data = .) ) %>% tidy()
+```
+( `- 1` in model removes overall intercept )
+
+
+## Example
+
+- Parallel lines with different *intercepts*
+
+```{r, echo = FALSE, fig.width=6, fig.height=4}
+lm_out %>% augment() %>% 
+  mutate( lwr = .fitted -2*.se.fit, upr = .fitted + 2*.se.fit ) %>% 
+  ggplot( aes(x = ENGINE_SIZE, y = CO2_EMISSIONS, col = MAKE) ) +
+  geom_point() + geom_line( aes( x=ENGINE_SIZE, y = .fitted), lwd=1) + 
+  geom_ribbon( aes(x = ENGINE_SIZE, ymin = lwr, ymax = upr, group = MAKE),inherit.aes = FALSE, alpha =.2 )
+
+```
+
+## Example
+
+- Find *"greenest"* car manufacturer
+
+```{r, collapse=TRUE}
+fcr %>% lm( CO2_EMISSIONS ~ ENGINE_SIZE + MAKE - 1, data = .) %>% 
+  tidy() %>% filter(str_detect(term, "MAKE")) %>% 
+  arrange(estimate) %>% slice( c(1:5) )
+```
+
+(Mazda is actually [most fuel-efficient automaker](https://www.autodeal.com.ph/articles/car-news-philippines/mazda-most-fuel-efficient-automaker-fifth-time))
+
+
+## Intercept & Categorical Variables
+
+- Intercept *replaces* mean of first category
+    + Included by default in model
+- Remaining categories represent *difference* in mean level
+
+```{r, collapse=TRUE}
+fcr %>% filter(MAKE %in%  c("FORD", "HONDA", "VOLKSWAGEN")) %>% 
+lm( CO2_EMISSIONS ~ ENGINE_SIZE + MAKE, data = .) %>% tidy()
+```
+
+
+## Dummy Variables 
+
+- Factors split into *dummy variables* taking 0/1 values
+
+|         | factor  | dummy_A | dummy_B | dummy_C | intercept |
+|---------|---------|---------|---------|---------|-----------|
+| categ. A | "A" (1) | 1       | 0       | 0       | 1         |
+| categ. B | "B" (2) | 0       | 1       | 0       | 1         |
+| categ. C | "C" (3) | 0       | 0       | 1       | 1         |
+
+- Categories represented by dummy variables in model 
+$$ Y = \beta_A \cdot dum_A + \beta_B \cdot dum_B + \beta_C \cdot  dum_C + \beta  \cdot X + \ldots \Leftrightarrow  $$
+$$ \Leftrightarrow Y = \alpha \cdot 1 + \beta_{\Delta B} \cdot dum_B + \beta_{\Delta C} \cdot  dum_C + \beta  \cdot X + \ldots$$
+
+
+## Dummy Variables
+
+- `fastDummies` package creates dummy variables 
+```{r, collapse=TRUE}
+library(fastDummies)
+tibble( fct = c("A","B","A","C") ) %>% 
+  dummy_cols( select_columns = "fct" )
+```
+
+## Example
+
+```{r, collapse=TRUE}
+fcr %>% filter(MAKE %in%  c("FORD", "HONDA", "VOLKSWAGEN")) %>% 
+  dummy_cols( "MAKE" )%>% 
+  lm( CO2_EMISSIONS ~ ENGINE_SIZE + MAKE_FORD + MAKE_HONDA + 
+        MAKE_VOLKSWAGEN -1, data = .) %>% tidy()
+```
+
+## Interactions
+
+- Include *interaction effects* between variables (`X1 * X2`)
+    + Allow *slopes* to change 
+    
+```{r, collapse = TRUE}
+fcr %>% filter(MAKE %in%  c("FORD", "HONDA", "VOLKSWAGEN")) %>% 
+  lm( CO2_EMISSIONS ~ ENGINE_SIZE * MAKE, data = .) %>% tidy()
+```
+
+## Example
+
+- Different lines (slope & intercept)
+
+```{r, echo = FALSE, fig.width=6, fig.height=4}
+out = fcr %>% filter(MAKE %in%  c("FORD", "HONDA", "VOLKSWAGEN")) %>% 
+  lm( CO2_EMISSIONS ~ ENGINE_SIZE * MAKE , data = .) 
+out %>% 
+  augment() %>% 
+  mutate( lwr = .fitted -1.96*.se.fit, upr = .fitted + 1.96*.se.fit ) %>% 
+  ggplot( aes(x = ENGINE_SIZE, y = CO2_EMISSIONS, col = MAKE) ) +
+  geom_point() + geom_smooth(method = "lm")
+```
+
+
+## Factor Variables 
+
+- `forcats` package for [working with factors](https://forcats.tidyverse.org/)
+    + `fct_lump()`: collapse infrequent categories into "other" 
+    + `fct_relevel()`: reorder factor levels by hand
+    + `fct_reorder()`: reorder factor by another variable
+    + `fct_infreq()`: reorder factor by value frequency
+
+```{r, collapse = TRUE}
+fcr %>% mutate(MAKE = fct_lump(MAKE, n = 3)) %>% head(3)
+```
+

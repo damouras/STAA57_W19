@@ -1,0 +1,56 @@
+---
+title: "STAA57 - WorkSheet 3"
+date: "  "
+author: "Name:    , ID#:   "
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Goal**: Master tidy data organization and subsetting. 
+
+1. Reshape the following data so that they are *tidy*
+
+```{r}
+my_df = data_frame( group = c("A","B","C"), 
+                    drug_X = c(130, 135, 140),
+                    drug_Y = c(NA, 150, 135))
+```
+
+
+For the remaining questions use the *dinesafe* data. 
+```{r, include = FALSE}
+library(tidyverse)
+dinesafe = read_csv("data/dinesafe.csv") 
+```
+
+2. Arrange infractions from largest to smallest amount fined. Return the inspection ID, establishment name, amount fined, and infraction details.
+
+3. Find the *restaurant* infractions with the 10 highest fines. Return the inspection ID, establishment name, amount fined, and infraction details.
+
+
+4. Find how many (unique) inspections took place in 2017.
+
+5. Looking at distinct values of the variable SEVERITY, there are two types of values labeled <NA> and "NA - Not Applicable". Can you explain the difference between the two? 
+
+```{r}
+dinesafe %>% distinct(SEVERITY)
+```
+
+6. Split SEVERITY into two variables: a severity code (SEV_CODE) and a severity description (SEV_DESC): i.e. `separate()` the values of SEVERITY along the hyphen (--).
+
+7. Find one of my favourite spots in TO: it was inspected on 2018-03-20, got a Pass, and has the 4th smallest ID \# out of all the other establishments inspected on that day. Write R code that outputs the name of the place.  
+(Hint: Use `top_n()` with *negative* row index.)
+
+
+8. Create a list of all *unique* Tim Hortons establishments in Toronto. The name can be either "TIM HORTONS" or "Tim Hortons", and you should use `select()` with `starts_with()`  to return all variables starting with "ESTABLISHMENT".
+
+
+
+
+
+

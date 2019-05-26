@@ -1,0 +1,50 @@
+---
+title: "STAA57 - WorkSheet 1"
+author: 'Name:   , ID#:   '
+output:
+  html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+*Goal*: Create your first data analysis report in R!
+
+0. Download and install [R](https://cran.r-project.org/) and [RStudio](https://www.rstudio.com/), available for Windows/Mac/Linux. If you have trouble installing the software, or have Chrome OS, you can use a web-based version at [RStudio Cloud](https://rstudio.cloud/) by opening a free account. 
+
+1. Create a new folder and associated R project called "WS1". Verify your working directory by running `getwd()`
+
+```{r}
+# You R code goes here
+# (comments start with the pound key "#"" 
+# and are not executed)
+
+```
+
+2. Install the `babynames` package on your computer. Either run `install.packages("babynames")` *once* in the console, or go to the *Tools >  Install Packages...*  tab.
+
+
+3. Load the package by running `library(babynames)`. This will make the `babynames` data available for your R session. Look at the first few lines of data using `head(babynames)`.
+
+
+4. The file *babynames15.csv* contains the data for 2015 alone. Copy this file in a new subfolder of your working directory named *data*. Read the file into an R object using 
+`babynames15 = read.csv("data/babynames15.csv")`. 
+
+
+5. Print the first few rows of the data using `head(babynames15)`.
+
+
+
+
+6. Create a barplot with the proportion of the most popular female names using:
+`barplot( height = head(babynames15)$prop, names.arg = head(babynames15)$name )`.
+
+
+
+7. Complete the following mathematical equation 
+$$ \sum _{n=0}^{\infty} \frac{1}{2^n} = ? $$
+
+Fill in your name and ID \# in the preamble. Then *"knit"* the Rmarkdown document into an html file and submit on Quercus. 
+
+
+Congratulations, you have created your first Rmarkdown report!

@@ -1,0 +1,275 @@
+---
+title: "L14 - Linear Regression"
+author: "Sotirios Damouras"
+output:
+  ioslides_presentation:
+    transition: 0
+    logo: img/logo.png
+---
+
+<!-- 
+output: html_notebook 
+
+output:
+  ioslides_presentation:
+    transition: 0
+    logo: img/logo.png
+-->
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(gapminder)
+gap07 = gapminder %>% filter(year == 2007)
+gap07Europe = gap07 %>% filter( continent == "Europe")
+```
+
+## Lecture Goals 
+
+- Examine and model the relationship between two numerical variables 
+    + Perform simple linear regression 
+    + Assess model fit
+    + Create predictions
+    
+- Readings 
+    + [R4DS](https://r4ds.had.co.nz): ch. 23.1-3
+    + [ISRS](https://www.openintro.org/download.php?file=isrs1_tablet&referrer=/stat/textbook.php): ch. 5.1-2
+
+
+## Variable Relationships
+
+- Gapminder '07, life expectancy vs GPD/capita
+
+```{r, fig.width=7, fig.height=4}
+gap07 %>% ggplot( aes(x = gdpPercap, y = lifeExp, col = continent)) + 
+  geom_point() 
+```
+
+
+## Modeling Relationships
+
+- Label the two variables $X$ and $Y$
+    + $Y$ is *response* variable  
+    + $X$ is *explanatory/predictor* variable
+    
+- Goal is to predict/affect value of $Y$, based on knowing/manipulating value of $X$
+
+- Use function $f(\cdot)$ to model relationship
+    + For each $X$ value, function gives *average* $Y$ value 
+    + Estimate $f(\cdot)$ using data pairs $\{(y_i,x_i)\}_{i=1}^{n} =$     
+    
+    $$= \{(y_1,x_1),\ldots,(y_n,x_n) \}$$
+
+
+## Linear Relationships
+
+- Focus on European countries  
+
+```{r, fig.width=7, fig.height=4}
+gap07Europe %>% ggplot( aes(x = gdpPercap, y = lifeExp )) + 
+  geom_point(size = 2) + geom_smooth( method = "lm")
+```
+
+
+## Simple Linear Regression
+
+- *Linear* function: $f(x) = \alpha + \beta x$
+    + Parameters: *intercept* ($\alpha$) and *slope* ($\beta$)
+    + *Linear relationship*: for 1 unit increase in $X$, "expect"" $\beta$ units increase in $Y$
+
+- Estimate parameters by *minimizing* the *mean squared error* (MSE) of the data from the line  
+$$ y_i = f(x_i) + \epsilon_i = \overbrace{ \alpha + \beta x_i}^{\textrm{fitted value}} + \overbrace{ \epsilon_i }^{\textrm{residual}}, \quad i=1,\ldots,n \\
+MSE = (\epsilon_1^2 + \epsilon_2^2 + \ldots + \epsilon_n^2) / n $$
+
+
+## Simple Linear Regression
+
+```{r, fig.width=7, fig.height=5, echo = FALSE}
+library(broom)
+gap07Europe %>% lm(lifeExp ~ gdpPercap, data = .) %>% augment() %>% 
+  ggplot(aes( x = gdpPercap, y = lifeExp)) + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  geom_point( aes( col = "y_i (actual)" ), size = 2) + 
+  geom_point( aes(y = .fitted, col = "f(x_i) (fitted)" ), size = 2) + 
+  geom_segment(aes(x = gdpPercap, y = lifeExp, xend = gdpPercap, yend = .fitted), col="red", lwd = 1) + 
+  scale_color_manual(values = c("red", "black") )
+```
+
+## Fitting Linear Models
+
+- Function `lm()` fits linear model
+    + Models saved as objects, passed on to other functions 
+
+```{r, collapse=TRUE}
+lm_out = gap07Europe %>% lm( lifeExp ~ gdpPercap, data = . ) 
+summary(lm_out) 
+```
+
+## Model Objects 
+
+- `broom` package converts model info into tidy data-frames
+    + `tidy()` for parameters values
+    + `glance()` for model statistics 
+    + `augment()` for fitted/residual values to original data
+
+```{r, collapse=TRUE}
+library(broom)
+tidy(lm_out)
+augment(lm_out)
+```
+
+
+
+## Predictions
+
+- Models used to make *predictions* based on *new X data* 
+     + Use `add_predictions()` in `modelr` package
+
+```{r, collapse=TRUE, message=FALSE}
+library(modelr)
+gap_pred = tibble( gdpPercap = (1:4)*10000 ) %>% 
+  add_predictions( lm_out , var = "lifeExp")
+gap_pred
+```
+
+## Predictions
+
+```{r, fig.width=7, fig.height=5, echo=FALSE}
+gap07Europe %>% 
+  ggplot(aes( x = gdpPercap, y = lifeExp)) + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  geom_point( aes( col = "actual" ), size = 2) + 
+  geom_point( aes( col = "predicted" ), data = gap_pred, size = 2 ) + 
+  scale_color_manual(values = c("black","red") )
+```
+
+
+## Prediction Error 
+
+- Predictions are points along $f(\cdot)$
+     + Represent **average** $Y$ for given level of $X$
+     
+- Actual $Y$ values are scattered around $f(X)$
+     + Variability around prediction measured by *residual standard error*
+     $$ \sigma_{res} = \sqrt{MSE} $$
+     + Expect around 95% of data within two standard deviations of prediction ($f(x_i) \pm 2 \times \sigma_{res}$)
+
+
+## Predictions
+
+
+```{r, fig.width=7, fig.height=5, echo=FALSE}
+new_data = tibble( gdpPercap = seq_range(gap07Europe %>% pull(gdpPercap), n = 100 ))
+temp = predict( lm_out, new_data, interval="prediction", level=.95) %>% as_tibble() %>% bind_cols( new_data )
+
+gap07Europe %>% lm(lifeExp ~ gdpPercap, data = .) %>% augment() %>% 
+  ggplot(aes( x = gdpPercap, y = lifeExp)) + 
+  geom_point( size = 2) + 
+  geom_ribbon( aes( x = gdpPercap, min = lwr, max = upr, y = NULL, fill = "prediction interval"), 
+               data = temp, alpha = .2 ) +
+  geom_smooth( aes( fill = "confidence interval"), method = "lm", alpha = .2) + 
+  scale_fill_manual( values = c("red", "blue"), name = "" )
+```
+
+## Extrapolation
+
+- Predictions outside observed range of $X$ are *not* reliable
+    
+
+```{r, fig.width=7, fig.height=5, echo=FALSE}
+gap07Europe %>% 
+  ggplot(aes( x = gdpPercap, y = lifeExp)) + 
+  geom_smooth(method = "lm", se = FALSE, fullrange = TRUE) + 
+  geom_point( size = 2) + 
+  geom_point( data = add_predictions( tibble( gdpPercap = 75000 ), 
+              lm_out, var = "lifeExp"),col = "red", size = 2 ) 
+```
+
+
+## Measuring Fit 
+
+- $R^2$ measures *how well* model fits data (ratio 0-100%)
+      
+$$ R^2=1 - \frac{MSE(\textrm{model})}{MSE(\textrm{no rel.})} $$
+
+
+```{r, fig.width=3.5, fig.height=3.5, echo=FALSE}
+gap07 %>% filter( continent == "Europe" ) %>% 
+  lm(lifeExp ~ gdpPercap, data = .) %>% augment() %>% 
+  ggplot(aes( x = gdpPercap, y = lifeExp)) + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  geom_point(size = 2) + 
+  geom_point( aes(y = .fitted), col = 2, size = 2) + 
+  geom_segment(aes(x = gdpPercap, y = lifeExp, xend = gdpPercap, yend = .fitted), col="red")  + ggtitle( "linear model")
+
+Ybar =  gap07 %>% filter(continent == "Europe") %>% summarise( mean(lifeExp)) %>% pull()
+gap07 %>% filter( continent == "Europe" ) %>% 
+  lm(lifeExp ~ gdpPercap, data = .) %>% augment() %>% 
+  ggplot(aes( x = gdpPercap, y = lifeExp)) + 
+  geom_hline( yintercept = Ybar, col = "blue", lwd=1 )  +
+  geom_point(size = 2) + 
+  geom_point( aes(y = Ybar), col = 2, size = 2) + 
+  geom_segment(aes(x = gdpPercap, y = lifeExp, xend = gdpPercap, yend = Ybar), 
+               col="red") + ggtitle( "no relationship")
+  
+```
+
+
+
+## Correlation  
+
+- *Correlation coefficient* ($\rho$) is *directional* measure of *linear*  association 
+$$\rho = \pm \sqrt{R^2}$$
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.width=8, fig.height=2.5}
+library(MASS)
+rho = c( -.9, -.45, 0 , +.45, .9 )
+X = Y = list()
+set.seed(1234)
+for(i in 1:5){
+   temp = mvrnorm( n = 100, mu = c(0,0), Sigma = matrix( c(1, rho[i], rho[i], 1),2,2))
+   X[[i]] = temp[,1]; Y[[i]] = temp[,2]
+}
+X = unlist(X); Y = unlist(Y)
+
+cor_data = data_frame( rho = rho %x% rep(1,100), X , Y ) 
+cor_data %>% ggplot(aes(x = X, y = Y)) + 
+  geom_point() + geom_smooth(method = "lm", se = F) +
+  facet_grid( . ~ rho, labeller = "label_both") 
+
+```
+
+
+## Regression Cautions
+
+- Can fit linear regression model to *any* data
+    + Should only use it when appropriate 
+
+- Always check model fit for potential problems
+    + *Non-linearity, outliers, influential points* 
+
+- E.g. [Anscombe's quartet](https://en.wikipedia.org/wiki/Anscombe%27s_quartet): models w/ identical $\alpha, \beta, R^2$ 
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.width=7, fig.height=2.5}
+library(tidyverse)
+data_sets = gather( anscombe, "set", "X", 1:4 ) %>% dplyr::select(set, X) %>% 
+  bind_cols( gather( anscombe, "set", "Y", 5:8 ) %>% dplyr::select( Y) ) %>% 
+  mutate( set = str_remove(set, "\\D"))
+
+data_sets %>% ggplot(aes(x = X, y = Y)) + 
+  geom_point() + geom_smooth(method = "lm", se = F) +
+  facet_grid( . ~ set, labeller = "label_both") 
+```
+
+## Transformations
+
+- Fit can be better on *transformed* variables (X and/or Y)
+    + Use *invertible* transformations (log/exp, root/power) 
+    + Adjust predictions accordingly
+
+```{r, echo = FALSE, fig.width = 7, fig.height=4}
+gap07 %>% 
+  ggplot( aes(x = gdpPercap, y = lifeExp)) + 
+  geom_point(aes(col = continent)) + 
+   scale_x_log10() + geom_smooth( method = "lm")
+```
+
