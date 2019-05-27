@@ -1,0 +1,105 @@
+***
+
+**Goal**: Practice identifying causal and spurious relationships (confounding, Simpson's paradox) with simulated and real data.
+
+
+```{r}
+library(tidyverse)
+```
+
+
+*** 
+
+**Migraine & acupuncture case study** (adapted from [ISRS](https://www.openintro.org/stat/textbook.php?stat_book=isrs))
+A migraine is a particularly painful type of headache, which patients sometimes wish to treat with acupuncture. To determine whether acupuncture relieves migraine pain, researchers conducted a *randomized controlled study* where 89 females diagnosed
+with migraine headaches were randomly assigned to one of two groups: treatment or control. 43 patients in the treatment group received acupuncture that is specifically designed to treat migraines. 46 patients in the control group received placebo acupuncture (needle insertion at nonacupoint locations). 24 hours after patients received acupuncture, they were asked if they were pain free. Results are summarized in the contingency table below
+
+```{r}
+(migraine = tibble(
+  group = c("treatment", "control", "treatment", "control"),
+  pain_free = c("yes", "yes", "no", "no"),
+  n_cases= c( 10, 2, 33, 44) ))
+```
+
+
+1. What percent of patients *in the treatment* group were pain-free 24hrs after receiving accupuncture? What percent *in the control* group? 
+
+
+2. Replicate the barplot below. Does acupuncture look like an effective treatment for migraines? 
+
+![](./img/acupuncture.PNG)
+
+3. Perform a hypothesis test to check if acupuncture actually reduces migraines at the 5% significance level. Based on the study description, do you believe acupuncture has a *causal* effect on migraines? Justify your answer.          
+(Hint: use `coin::independence_test()` with `weights = ~ n_cases` argument for defining the number of cases for each variable combination.)
+
+
+***
+
+**Kidney stone data** ( [Brit. Med. Journal](https://www.ncbi.nlm.nih.gov/pubmed/3083922))
+Charig et al undertook a comparison of *historical* success rates in removing kidney stones. Open surgery (*treatment A*) had a success rate of 78% (273/350), while percutaneous nephrolithotomy (*treatment B*) had a success rate of 83% (289/350), an improvement over the use of open surgery. However, the success rates looked rather different when *stone size* (small/large; based on diameter </> 2 cm) was taken into account. The data are given below.
+
+```{r}
+(kidney = tibble( 
+  size = factor( c( rep("large",4), rep("small",4) ) ),
+  treatment = factor( rep( c( "A", "A", "B", "B"), 2 ) ), 
+  outcome = factor( rep( c("failure", "success"), 4 ) ), 
+  n_cases= c(71, 192, 25, 55, 6, 81, 36, 234) ))
+```
+
+4. Verify the overall success rates for treatments A and B (78% and 83%, respectively).
+
+
+5. Recreate the barplots below, showing the number of cases and success rates for different treatments and stone sizes. Which treatment has the highest success rate for *both* stone size?
+
+![](./img/kidney_cases.PNG)
+![](./img/kidney_rates.PNG)
+
+
+6. Explain (in words) why treatment A has *lower* overall success rate, even though it has *higher* individual success rates for either stone size. 
+
+7. Based on the study desing, do you believe that treatment A should always be prescribed instead of treatment B? Justify your answer.
+
+***
+
+Consider a model with three *binary* (TRUE/FALSE) variables $X, Y, Z$, where:
+- $Z$=TRUE with probability (w.p.) 50% 
+    + when $Z$=FALSE, then $X$=TRUE w.p. 25% and $Y$=TRUE w.p. 75% 
+    + when $Z$=TRUE, then $X$=TRUE w.p. 75% and $Y$=TRUE w.p. 25% 
+The code below generates 100 observations from this model:  
+
+```{r}
+N = 200
+sim = 
+  tibble( Z = runif(N), X = runif(N), Y = runif(N)) %>% 
+  mutate( Z = ifelse( Z <.5, TRUE, FALSE) ) %>% 
+  mutate( X = ifelse( X < .25 + Z*.5, TRUE, FALSE) ) %>% 
+  mutate( Y = ifelse( Y < .75 - Z*.5, TRUE, FALSE) ) %>% 
+  mutate_all( factor )
+```
+
+8. Consider the relationship between the two pairs of variables $Z,Y$ and $X,Y$. Based on the model, which pair is causaly related? 
+
+9. Test the pairs for independence using `coin::independence_test()`. Is there evidence of a relationship between the pairs? 
+
+
+
+9. Repeat the previous tests *within* each level of the non-pair variable. I.e. test the independence of pair $X,Y$ based on $Z$=TRUE data only, and based on $Z$=FALSE data only. Do the same thing for the independence of pair $Z,Y$ based on $X$=TRUE and $X$=FALSE, i.e. run 4 tests in total. Describe which relationship is signifinant and which is not. Based on your results, which variable would you say is a *confounder*? Justify your answer.    
+(Hint: use the `subset` argument in `independence_test()`)
+
+
+***
+
+
+10. For each of the following relationships, try to identify a potential confounding variable.
+
++ "Studies have shown a relation between kale consumption and reduced cancer rates".
+
+
++ "There is an association between urbanization (urban %) and type-2 diabetes in different countries".
+
+
++ "Shoe size is an indicator of reading performance for elementary school children"
+
+
+
+11. [Extra] Read the following article on [smoking and cancer](https://priceonomics.com/why-the-father-of-modern-statistics-didnt-believe/)

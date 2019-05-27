@@ -1,0 +1,31 @@
+***
+
+**Goal**: Compare multiple means/proportions with plots and hypothesis tests.
+
+
+Use the Labout Force Survey data for Toronto.
+```{r, include=FALSE}
+library(tidyverse)
+lfs = read_csv('../data/LFS_Toronto.csv') 
+```
+
+1. Recreate the following plot, showing the density of job tenure *in years* for employed individuals, *"faceted"* by education level (`educ`). 
+
+![](img/faceted_density.PNG)
+
+
+2. Calculate the *average* tenure in years, broken down by education levels.Based on your results and the previous plot, does average tenure seem the same across education levels?
+
+
+3. Perfmorm a permutation test for the equality of average tenure across different education levels. Do the results confirm your previous answer?
+
+
+4. Create a *normalised* barplot showing the proportion of *single* people (`marstat==6`) at different education levels.
+
+
+5. Test whether the proportion of singles is equal across education levels. What do you conclude?
+
+6. Recreate the following mosaic plot of age group (`age_12`) vs education level.
+
+
+![](img/mosaic_WS.PNG)

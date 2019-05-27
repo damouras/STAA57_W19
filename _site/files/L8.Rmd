@@ -1,0 +1,204 @@
+<!-- output: html_notebook -->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+## Lecture Goals 
+
+- Understand hierarchical/tree data
+    + Read data in XML format
+- Scrape data from the web
+    + Read data from HTML documents
+    
+- Readings 
+    + [XML Basics](https://www.w3schools.com/xml/default.asp)
+    + [Data Scraping example in R](http://thatdatatho.com/2018/11/01/web-scraping-indeed-jobs-r-rvest/)
+    
+## Hierarchical Data
+
+- Data with *tree-like* structure
+    + Collection of *nested* nodes containing information and/or other nodes
+    + E.g Company's organizational structure
+
+![](./img/CEO_tree.PNG)  
+
+## Markup Languages
+
+- Hierarchical info can be described with *markup languages* 
+     + Most general is **XML** (eXtensible Markup Language) 
+     + Others include **HTML** (Hyper-Text Markup Language), *Markdown* and *Latex* 
+
+- Sample XML
+```
+<CEO >
+  <COO> 
+        <Op_Manager> ... </Op_Manager>
+  </COO>
+  <CMO> ... </CMO> 
+  <CFO> ... </CFO> 
+</CEO>
+```
+
+## XML Basics
+ 
+- XML documents consist of *nested elements*, some with *attributes*
+     + Elements demarcated by `<element_name> ... </element_name>`
+     + Attributes given by *key-value pairs* 
+      `<person gender="female">`
+     + Element content can be data or other elements
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<bookstore>
+  <book category="cooking">
+    <title lang="en">Everyday Italian</title>
+    <author>Giada De Laurentiis</author>
+    <year>2005</year>
+    <price>30.00</price>
+  </book>
+  ...
+</bookstore>  
+```
+
+## XML TREE
+
+![(https://www.w3schools.com/xml/xml_syntax.asp)](./img/nodetree.gif)
+
+
+## XML in R
+
+- `xml2` package for working with XML data
+
+```{r, collapse = TRUE}
+library(xml2)
+bookstore = read_xml("./data/bookstore.xml")
+class( bookstore )
+bookstore
+```
+
+## XPath
+
+- XPath uses path-like *expressions* to access *nodes* (elements or attributes) in an XML document
+    
+| expression | selects |
+| --- | --- |
+| `/bookstore` | root *bookstore* element |
+| `//book` | all *book* elements, anywhere in document |
+| `/bookstore/book[last()-1]` | next-to-last *book* element |
+| `//@lang`	| all *lang* attributes |
+|  `/*[@*]` | any element with any attribute |
+| `//title[@lang='en']` | all *title* elements with attribute *lang*='en' |
+
+(https://www.w3schools.com/xml/xpath_syntax.asp)
+
+
+## `xml2` Functions
+
+- `xml_structure()` shows structure of XML doc
+
+- `xml_find_first/all("XPath")` finds first/all nodes described by XPath expression 
+
+- `xml_attr()` retrieves node attribute
+- `xml_text()` retrieve node content as text
+
+
+##  Example
+
+```{r, collapse = TRUE}
+bookstore %>% 
+  xml_find_all( "//book[price<40]/author") %>% 
+  xml_text()
+
+bookstore %>% 
+  xml_find_all( "//book[@category='web']/title") %>% 
+  xml_attr("lang")
+```
+
+## Web Data 
+
+- Ways to extract information from the web
+    + Dedicated interface
+    + Scraping webpages 
+
+![](./img/web_scraping.PNG)  
+
+
+## Web Scrapping
+
+- All webpages expressed as HTML documents
+    + Browsers interpret HTML and present content
+    + Similar to XML, and can be parsed the same way
+
+```
+<!DOCTYPE html>
+<html>
+<head>
+  <title>STAA57 - Hierarchical & Web Data</title>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+...
+```
+
+## Example 
+
+- Search workopolis.ca for *Data Science* jobs *in Toronto*
+https://www.workopolis.com/jobsearch/find-jobs?ak=data+scientist&l=Toronto%2C+ON
+
+![](./img/workopolis.PNG)
+
+## Web Scrapping in R
+
+- `rvest` package offers similar functionality to `xml2` for HTML
+
+- Common workflow
+    + Read document tree with `read_html()`
+    + Select nodes with `html_nodes()`
+    + Extract info with `html_text/attr()`  
+    
+## Example
+
+
+
+```{r, message=FALSE}
+library(rvest)
+URL = "https://www.workopolis.com/jobsearch/find-jobs?ak=data+scientist&l=Toronto%2C+ON"
+read_html(URL) %>% 
+  html_nodes(xpath = "//*[@class='JobCard-title']") %>% 
+  html_attr("title") %>% head()
+```
+
+
+
+## Navigating HTML
+
+- *View source* or *inspect elements* of webpage in your browser 
+    + Available in Firefox/Chrome/Edge/Safari
+
+![](./img/inspect.png)
+
+## CSS Selectors
+
+- HTML documents have standard elements & structure
+- *CSS selectors* are easier way to navigate them 
+    
+| expression | selects |
+| --- | --- |
+| `body` | all \<body\> elements |
+| `.title` | all elements with *class = 'title'* |
+| `#fname` | all elements with *id = 'fname'* |
+| `[title]` | all elements with title attribute |
+
+(https://www.w3schools.com/csSref/css_selectors.asp)
+
+
+## Example
+
+- Same as before, using CSS selector
+
+```{r, collapse=TRUE, message=FALSE}
+read_html(URL) %>% 
+  html_nodes(css = ".JobCard-title") %>% 
+  html_attr("title") %>% head()
+``` 

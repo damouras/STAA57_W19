@@ -28,5 +28,3 @@ We will use parts of the following (free) textbooks:
 | Course Project | 20% |
 | Final Exam | 40% |
 
-#### A more detailed course outline can be found [here](/files/STAA57_W19_Outline.pdf).
-

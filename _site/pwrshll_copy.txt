@@ -1,0 +1,6 @@
+Get-ChildItem -Path "C:\Users\Sotiris\OneDrive - University of Toronto\STAA57 W19\Lectures\*" -Include "L[0-9].html", "L[0-9].Rmd", "L[0-9][0-9].html", "L[0-9][0-9].Rmd" -Recurse | Copy-Item -Destination "C:\Users\Sotiris\OneDrive - University of Toronto\UTSC Related\Webpage\staa57\files\"
+
+
+Get-ChildItem -Path "C:\Users\Sotiris\OneDrive - University of Toronto\STAA57 W19\Lectures\*" -Include "WS[0-9].nb.html", "WS[0-9].Rmd", "WS[0-9][0-9].nb.html", "WS[0-9][0-9].Rmd" -Recurse | Copy-Item -Destination "C:\Users\Sotiris\OneDrive - University of Toronto\UTSC Related\Webpage\staa57\files\"
+
+Copy-Item -Path "C:\Users\Sotiris\OneDrive - University of Toronto\STAA57 W19\STAA57_W19_Outline.pdf" -Destination "C:\Users\Sotiris\OneDrive - University of Toronto\UTSC Related\Webpage\staa57\files\"

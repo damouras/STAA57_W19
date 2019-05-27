@@ -1,0 +1,34 @@
+```{r setup, include=FALSE}
+library(tidyverse)
+library(gapminder)
+```
+
+**Goal**: Create effective data visualizations. 
+
+For this exercise, you will try to recreate the Gapminder [World Poster](https://www.gapminder.org/downloads/updated-gapminder-world-poster-2015/) on health vs wealth, shown below. This is a scatterplot of GDP/capita (INCOME)) and life expectancy (HEALTH)) for different countries, with information on continent and population. The poster uses 2015 data, but we will use the latest available year (2007) in the `gapminder` package.
+
+![](img/world_poster.PNG)
+
+
+1. Create a scatter-plot of Life Expectancy versus GDP-per-capita, for 2007 data.
+
+2. On your previous plot, change the x-axis (gdg/cap) to *logarithmic* scale.
+
+3. On your previous plot, change change the *size* of the points 
+according to the population of each country.
+
+
+4. On your previous plot, change the *color* of the points according to the continent.
+
+
+5. On your previous plot, change the *scale* of the point size to range from 1 to 14.  
+
+
+6. On your previous plot, *label* each point with the name of the country. 
+(Hint: Use `geom_text` with options `hjust = -.1, nudge_x = .02, alpha = .2` to make the labels more readable)
+
+
+7. Recreate the following plot, showing the 2017 population of the 5 largest countries within each continent. 
+
+
+![](img/recreate_plot.PNG)

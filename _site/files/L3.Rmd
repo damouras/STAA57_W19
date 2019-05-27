@@ -1,0 +1,135 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#library(tidyverse)
+```
+
+## Lecture Goals 
+
+- Learn how to:
+    + Organize data into tables (*tidy* data)
+    + Subset data (extract rows/columns)
+    + Use *pipelines* in R programming
+    
+- Readings 
+    + [R4DS](http://r4ds.had.co.nz/): ch. 5.1-5.4, 12, 18
+    + Data Wrangling [cheatsheet](https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf)
+
+## Tidy Data
+
+- **Tidy data**: data stored in table (data-frame) where
+![](img/tidy_conditions.png)
+    + E.g.    
+![](img/tidyeg.PNG)
+
+## Tidyverse 
+
+- [Tidyverse](https://www.tidyverse.org/): collection of R packages for doing data using tidy data paradigm
+    + Packages share philosophy, syntax & organization 
+
+```{r, collapse=TRUE}
+# install.packages("tidyverse")
+library(tidyverse)
+# help(package = "tidyverse")
+```
+
+## Data Frames
+
+- Data-frame in (base) R 
+```{r, collapse=TRUE}
+my_df = data.frame( var1 = 1L:26L, var2 = letters )
+str(my_df)
+```
+
+- Tidyverse uses improved verion called [tibble](https://tibble.tidyverse.org/) 
+```{r, collapse=TRUE}
+my_tbl = data_frame( var1 = 1L:26L, var2 = letters )
+str(my_tbl)
+```
+
+## Subsetting rows
+
+- `filter()` picks *observations/rows*
+![](img/filter.PNG) 
+    + based on logical condition(s)
+
+| | | |
+|---|----|----| 
+| `<` | `<=` | `&` and |
+| `>` | `>=` | `|` |
+|`==` |	`!=` | `any()` |
+| `is.na()` |`%in%` |	`all()`|
+
+## Subsetting rows
+
+- `slice()` picks rows by position (integer)
+- `distinct()` removes duplicate rows 
+     + can be applied on specific variables
+- `sample_n()/sample_frac()` randomly samples rows
+- `top_n()` picks top n values of a variable
+
+## Subsetting columns
+
+- `select()` picks *variables/columns*
+![](img/select.PNG) 
+    + based on variable name/location
+    + *exclude* column with negative integers
+
+- Useful selector functions for variable names
+    + `contains()/matches()` 
+    + `starts_with()/ends_with()`  
+    + `num_range()` e.g. V1 -- V5
+
+## Reshaping Data
+
+- *Tidying-up* data w/ `spread()/gather()` 
+
+![](img/spread_gather.PNG)
+
+## Reshaping Data
+
+- Split/combine variables w/ `separate()/unite()` 
+
+![](img/separate_unite.PNG)
+
+- Sort data w/ `arrange()`
+![](img/arrange.PNG)
+
+## Pipes
+
+- Pipe operator `%>%` passes object on its left as (first) argument of function to its right
+     + `x %>% f(y) = f(x, y)`
+
+- Apply functions *sequentially*  
+`data %>% filter( ) %>% select( ) %>% arrange( )`
+![](img/pipes.png)   
+    + Identical but much *easier to read* than   
+`arrange( select( filter(data) ) ) )`
+
+## Dinesafe Data
+
+- Toronto [Dinesafe](https://www.toronto.ca/health/dinesafe/system.htm) program
+    + Every food-serving establishment receives 1-3+ inspections/year
+    + Public Health Inspector assigns one of 3 types of notice:
+![](./img/dinesafe_notices.png)
+
+- Available through City of Toronto's [Open Data](https://www.toronto.ca/city-government/data-research-maps/open-data/open-data-catalogue/health/#e3c15b0f-5f83-0f12-fabb-c84018395c38)
+
+
+## Dinesafe Data
+
+- Data Variables
+![](img/dinesafe_vars.PNG)
+
+
+## Dinesafe Data
+
+```{r, include = FALSE}
+dinesafe = read_csv("data/dinesafe.csv")
+```
+```{r, collapse = TRUE} 
+glimpse(dinesafe)
+```
+
+## Dinesafe Data
+
+- Lets explore the data using what we learned!

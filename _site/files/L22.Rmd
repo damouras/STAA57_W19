@@ -1,0 +1,228 @@
+<!-- 
+output: html_notebook 
+
+output:
+  ioslides_presentation:
+    transition: 0
+    logo: img/logo.png
+
+-->
+
+## Lecture Goals 
+
+- Understand *bias-variance* trade-off in modeling 
+- Compare models based on predictive performance
+- Perform *variable selection*  
+
+
+- Readings    
+    + [ISLR](http://www-bcf.usc.edu/~gareth/ISL/) ch 7.1-3
+
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(broom)
+set.seed(123)
+fcr = read_csv("../data/2018 Fuel Consumption Ratings.csv")
+```
+
+## Model Selection
+
+- **Model Selecion**: process of selecting appropriate model for improving *predictive performance*
+    + Different from *model fitting/learning* (i.e. estimating parameters)
+
+- Involves controlling model *complexity* 
+    + **Regularization** controls *flexibility* 
+    + **Variable selection** controls *information*
+    
+## Model Selection 
+
+- Model *too simple* $\rightarrow$ **Bias** 
+    + Cannot accurately *describe* relationship
+- Model *too complex* $\rightarrow$ **Variance** 
+    + Cannot accurately *estimate* relationship
+
+```{r, echo=FALSE, message = FALSE, warning=FALSE, fig.width = 8, fig.height=3}
+set.seed(123); n=50
+toy = tibble( X = 2*rnorm(n) ) %>% 
+  mutate(  f =  cos(X), Y = f + rnorm(n)/3, 
+           xx = seq( min(X), max(X), length.out = n),
+           ff = cos(xx) ) 
+#toy %>% ggplot(aes( x = X, y = Y)) + geom_point()
+
+p1 = toy %>% 
+  ggplot( aes( x = X, y = Y) ) + geom_point() + 
+  scale_y_continuous(limits = c(-1.5,1.5)) + 
+  geom_line( aes(x = xx, y = ff, col = "true"), lwd = 1 ) +
+  geom_smooth( aes(col = "fitted"), method = "gam", formula = y ~ s(x, sp = .5) ) + ggtitle("High Bias") + guides(col=FALSE)
+
+p2 = toy %>% 
+  ggplot( aes( x = X, y = Y) ) + geom_point() + 
+  scale_y_continuous(limits = c(-1.5,1.5)) + 
+  geom_line( aes(x = xx, y = ff, col = "true"), lwd = 1) +
+  geom_smooth( aes(col = "fitted"), method = "gam", formula = y ~ s(x) ) + ggtitle("Just Right") + theme(legend.position = c(.5,0.05),
+          legend.direction = "horizontal") + 
+  scale_color_discrete(name = "")
+
+
+p3 = toy %>% 
+  ggplot( aes( x = X, y = Y) ) + geom_point() +
+  scale_y_continuous(limits = c(-1.5,1.5)) + 
+  geom_line( aes(x = xx, y = ff, col = "true"), lwd = 1) +
+  geom_smooth( aes(col = "fitted"), method = "gam", formula = y ~ s(x, k=25, sp = 0) ) + ggtitle("High Variance") + guides(col=FALSE)
+
+library(gridExtra)
+grid.arrange(p1, p2, p3,  nrow = 1)
+```
+
+## Predictive Performance 
+
+- *In-sample* performance (MSE/$R^2$) *always* improves with complexity 
+      + Want model to perform well *out-of-sample*
+    
+
+```{r, echo=FALSE, message = FALSE, warning=FALSE, fig.width = 5, fig.height=3}
+set.seed(1234); n=30
+toy2 = tibble( X = seq(-4,4,length.out = n) ) %>% 
+  mutate(  f =  cos(X), Y = f + rnorm(n)/3, 
+           xx = seq( min(X), max(X), length.out = n),
+           ff = cos(xx) ) 
+toy2 %>% 
+  mutate( new = f + rnorm(n)/3 ) %>% 
+  ggplot( aes( x = X, y = Y) ) +
+  geom_line( aes(x = xx, y = ff), lwd = 1, lty = 2) +
+  geom_smooth( method = "gam", formula = y ~ s(x, k=30, sp = .0000005) ) + 
+  geom_point(aes(col = "in-sample")) + 
+  geom_point(aes(y = new, col = "out-of-sample")) 
+
+```
+
+## Bias-Variance Trade-Off
+
+- Another perspective
+
+![](./img/bias_variance_target.PNG)
+
+## Bias-Variance Trade-Off
+
+- Another perspective
+
+![](./img/bias_variance_error.PNG)
+
+
+## Regularization 
+
+- *Regulatization*: penalize fit with model complexity 
+    + E.g. select model that minimizes:    
+    $$\text{(training error) + (complexity penalty)}$$
+
+- Optimal penalty is unknown, needs to be estimated 
+
+- Choose penalty based on out-of-sample performance
+    + *Theoretical*: Adjusted $R^2$, various criteria (AIC/BIC)
+    + *Empirical*: Validation set, Cross-Validation
+
+ 
+## Example 
+
+- Regression tree for hourly earnings (LFS data)
+    + In-/out-of-sample performance *without regularization*
+
+```{r, include = FALSE}
+lfs = read_csv("../data/LFS_Toronto.csv") %>% 
+  mutate( immig = factor(immig), age_12 = factor(age_12),
+          age_6 = factor(age_6), sex = factor(sex),
+          marstat  = factor(marstat), educ = factor(educ),
+          naics_21 = factor(naics_21), noc_10 = factor(noc_10),
+          noc_40 = factor(noc_40) ) %>% 
+  select( hrlyearn, immig, age_12, age_6, sex, marstat, 
+          educ, naics_21, noc_10, noc_40) %>% drop_na() 
+set.seed(123)
+```
+
+```{r, collapse = TRUE, message = FALSE, warning = FALSE}
+train = lfs %>% sample_frac(.70)
+test = setdiff( lfs, train)
+library(rpart) 
+tree_out = rpart( hrlyearn ~ immig + age_6 + sex + marstat + 
+                    educ + naics_21 + noc_10 + noc_40, data = train,
+                  control = rpart.control( minsplit = 20, cp = 0))
+library(modelr)
+train %>% add_predictions( tree_out) %>% 
+  summarise( sd(hrlyearn - pred)) %>% pull()
+test %>% add_predictions( tree_out) %>% 
+  summarise( sd(hrlyearn - pred)) %>% pull()
+```
+
+## Example 
+
+- In-/out-of- sample performance *with* regularization
+
+```{r, collapse = TRUE}
+xerror = tree_out$cptable[,"xerror"]; xstd = tree_out$cptable[,"xstd"]
+cp_ind = min( which( xerror - xstd < min(xerror) ) )
+cp_opt = tree_out$cptable[ cp_ind, "CP"]
+
+tree_reg = prune( tree_out, cp = cp_opt )
+
+train %>% add_predictions( tree_reg) %>% 
+  summarise( sd(hrlyearn - pred)) %>% pull()
+test %>% add_predictions( tree_reg) %>% 
+  summarise( sd(hrlyearn - pred)) %>% pull()
+```
+
+## Example 
+
+- Cross-validated error from `rpart()`
+```{r}
+plotcp(tree_out, )
+```
+
+
+## Variable selection
+
+- Adding explanatory variables never hurts in-sample performance
+    + Similar to increasing model complexity 
+    + However, too many variables can harm predictions
+      
+- **Variable Selection** chooses *best* subset of variables
+    + Optimize w.r.t. out-of-sample performance
+
+- `step()` function in R performs *variable selection*
+      + Input *full* model (all possible variables)
+      + Output *"optimal"* trimmed down model 
+      
+## Example
+
+- Add *randomly generated* `X, Z` & fit linear model
+
+```{r, include=FALSE}
+set.seed(1234)
+```
+
+```{r, warning = FALSE, collapse=TRUE}
+lfs_ = lfs %>% mutate( X = rnorm(nrow(lfs)), Z = rnorm(nrow(lfs)))
+train_ = lfs_ %>% sample_frac(.50); test_ = setdiff( lfs_, train_)
+lm_out = lm( hrlyearn ~ immig + age_6 + sex + marstat + 
+  educ + noc_10 + X + Z, data = train_)
+lm_out %>% glance() %>% pull(r.squared)
+train_ %>% add_predictions( lm_out) %>% 
+  summarise( sd(hrlyearn - pred)) %>% pull()
+test_ %>% add_predictions( lm_out ) %>% 
+  summarise( sd( hrlyearn - pred)) %>% pull()
+
+```
+
+## Example
+
+- Run through `step()` to remove "redundant" variables
+
+```{r, collapse = TRUE}
+lm_step = step(lm_out, trace = 0)
+lm_step$anova # see removed variables
+lm_out %>% glance() %>% pull(r.squared)
+train_ %>% add_predictions( lm_step ) %>% 
+  summarise( sd(hrlyearn - pred)) %>% pull()
+test_ %>% add_predictions( lm_step ) %>% 
+  summarise( sd( hrlyearn - pred)) %>% pull()
+```

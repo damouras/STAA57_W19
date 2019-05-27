@@ -1,0 +1,208 @@
+<!-- 
+output: 
+    ioslides_presentation:
+    smaller: true
+    transition: 0
+    logo: img/logo.png
+-->
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(gapminder)
+library(broom)
+library(modelr)
+gap07 = gapminder %>% filter(year==2007 ) 
+```
+
+## Lecture Goals 
+
+- Learn how to 
+    + Model *nonlinear* relationships  
+    + Perform *nonparametric* regression w/ *basis functions*
+    + Use nonlinear models for prediction   
+
+- Readings    
+    + [ISLR](http://www-bcf.usc.edu/~gareth/ISL/) ch 7.1-3
+
+## Nonlinear Relationships
+
+- Model response as $Y = f(X) + \epsilon$, where $f(\cdot)$ is *nonlinear* function
+
+Two ways to estimate $f(\cdot)$
+
+- **Parametric**: assume form of $f(\cdot)$ is known (e.g. exponential, quadratic), and tune fit with parameters
+     + E.g. polynomial/logarithmic regression (transformations)
+
+- **Nonparametric**: minimal assumptions, more flexible forms for $f(\cdot)$
+    
+    
+## Parametric Model
+
+- Gapminder data, *logarithmic* regression
+$$Y \sim \alpha + \beta \log(X) $$
+  
+
+```{r, collapse = TRUE}
+gap07 %>% mutate( log_GDP = log(gdpPercap) ) %>% 
+  lm( lifeExp ~ log_GDP, data = .) %>% tidy()
+```
+
+## Parametric Model
+
+```{r, echo = FALSE, fig.width=7, fig.height=5}
+gap07 %>% ggplot( aes(y=lifeExp, x=gdpPercap) ) + 
+  geom_point() + geom_smooth( method = "lm", formula = "y~log(x)")
+```
+
+
+## Nonparametric Regression
+
+- Fit *flexible* model that can take different forms
+
+```{r, fig.width=6, fig.height=4.5}
+gap07 %>% ggplot( aes(y=lifeExp, x=gdpPercap) ) + 
+  geom_point() + geom_smooth(method = "gam", formula = y ~ s(x))
+
+```
+
+## Basis Functions
+
+- Certain functions can be expressed as compositions of simpler *basis functions* 
+    - E.g. *polynomial* is combination of powers of  $x$
+    $$f(x) = \beta_0 + \beta_1 x + \ldots \beta_q x^q$$
+
+- More generally, for set of basis functions $\{h_i(\cdot)\}$
+ $$f(x) = \beta_0 + \beta_1 h_1(x) + \ldots + \beta_m h_m(x)$$
+
+- Fit similarly to multiple regression on basis functions 
+    + Number/choice of basis functions can **depend on data**
+
+## Example 
+
+- Cubic regression
+
+```{r, collapse = TRUE}
+gap07 %>% 
+  mutate( X1 = gdpPercap, X2 = X1^2, X3 = X1^3) %>% 
+  lm( lifeExp ~ X1 + X2 +X3, data = .) %>% tidy()
+```
+
+## Example
+
+```{r, echo = FALSE, fig.width=7, fig.height=5, message=FALSE}
+xpoly = poly( gap07$gdpPercap, 3 ) %>% as_tibble() 
+colnames(xpoly)  = c("X1","X2","X3")
+coef = lm( lifeExp ~ poly(gdpPercap,3), data = gap07) %>% tidy() %>% pull(estimate)
+
+gap07 %>% 
+  bind_cols( xpoly ) %>% 
+  mutate( x1 = coef[1] + coef[2]*X1,
+          x2 = coef[1] + coef[3]*X2,
+          x3 = coef[1] + coef[4]*X3) %>% 
+ ggplot( aes(x=gdpPercap, y = lifeExp) ) + 
+  geom_point() + 
+  geom_smooth( aes(col = "combined"), method = "lm", formula = "y ~ poly(x,3)") +
+  geom_line( aes(y = x1, col = "~x")) +
+  geom_line( aes(y = x2, col = "~x^2")) +
+  geom_line( aes(y = x3, col = "~x^3"))
+```
+
+
+## Smooth Nonparametric Regression
+
+- *Smooth* nonlinear functions can be represented by *local* polynomial bases called [splines](https://en.wikipedia.org/wiki/Spline_(mathematics)) 
+
+
+```{r, echo=FALSE}
+library(splines)
+x = seq(0, 1, by=0.001)
+spl = bs(x,df=6)
+plot(spl[,1]~x, ylim=c(0,max(spl)), type='l', lwd=2, col=1, 
+     xlab="Spline bases", ylab="")
+for(j in 2:ncol(spl)){lines(spl[,j]~x, lwd=2, col=j)}
+```
+
+
+
+## Generalised Additive Model
+
+- **Generalised additive model (GAM)** describes $Y$ as sum of (smooth) functions of $X$'s  
+$$Y \sim s_1(X_1) + s_2(X_2) + \ldots$$
+
+- `gam()` function in `mgcv` package
+    + formula similar to `lm()`
+    + use `s()` for *smooth* function (spline-based)
+    + include linear or categorial terms
+
+```{r, message=FALSE}
+library(mgcv)
+gam_out = gam( lifeExp ~ s(gdpPercap) + continent, data = gap07)
+```
+
+## Example 
+
+```{r, fig.width=6, fig.height=4, message=FALSE}
+gap07 %>% mutate( pred = predict( gam_out, gap07 ) ) %>% 
+  ggplot( aes(y=lifeExp, x=gdpPercap, col = continent) ) + 
+  geom_point() + geom_line( aes(y = pred) )
+```
+
+
+## Regression Trees
+
+- **Regression tree** models $Y$ as (multivariate) *step function* of $X$'s
+    - *Non-smooth*, nonparametric model 
+    
+```{r, echo = FALSE, fig.width = 6, fig.height = 4}
+library(rpart)
+tree = rpart( lifeExp ~ gdpPercap, data = gap07)
+gap07 %>% add_predictions( tree ) %>% 
+  ggplot( aes(y=lifeExp, x=gdpPercap) ) + 
+  geom_point() + geom_line( aes(y = pred), col=4, lwd=1 )
+```
+
+
+## Example  
+    
+- Trees can seamlessly accomodate categorical $X$'s
+```{r}
+library(rpart)
+tree = rpart( lifeExp ~ gdpPercap + continent, data = gap07)
+```
+```{r, echo = FALSE, fig.width = 6, fig.height=4}
+gap07 %>% add_predictions( tree ) %>% 
+   ggplot( aes(y=lifeExp, x=gdpPercap, col = continent) ) + 
+  geom_point() + geom_line( aes(y = pred) )
+```
+
+
+## Example  
+```{r, fig.width = 6, fig.height=4}
+library(rpart.plot); rpart.plot(tree)
+```
+
+
+## Overfitting
+
+- Nonparametric models are prone to *overfitting*
+    + Too much flexibility can harm out-of-sample performance 
+```{r}
+tree = rpart( lifeExp ~ gdpPercap, data = gap07, 
+       control = rpart.control(cp = 0, minbucket=3))
+```
+```{r, echo=FALSE, fig.width=5, fig.height=3.5 }
+gap07 %>% add_predictions( tree ) %>% 
+  ggplot( aes(y=lifeExp, x=gdpPercap) ) + 
+  geom_point() + geom_line( aes(y = pred), col=4, lwd=1 )
+```
+
+## Predictions
+
+- Model predictions generated with `predict()` 
+    + Works with *any* nonparametric model
+
+- In-sample performance tends to too optimistic 
+    + Under-estimate standard deviation of prediction errors
+    
+- Use *test set* to estimate out-of-sample performance
+

@@ -1,0 +1,67 @@
+```{r setup, include=FALSE}
+library(tidyverse)
+library(modelr)
+library(broom)
+```
+
+**Goal**: Practice nonlinear/nonparametric regression. 
+
+***
+
+For this question, you will measure the *acceleration of gravity* using data from this simple [experiment](https://www.exploratorium.edu/snacks/falling-gravity). 
+
+```{r}
+gravity = tibble( time = (0:10)*.033, 
+                  distance = c(0, .005, .02, .04, .07, .11, 
+                               .16, .23, .31, .40, .51) )
+```
+The data consists of the `distance` covered from a free-falling object at regular `time` intervals. 
+
+
+1. Under Newton's laws of motion, the object will behave as:
+$$ \text{distance} = \frac{g}{2} \times \text{time}^2$$
+where $g$ is the *acceleration of gravity*. Note that this is a quadratic function of time, without a constant or linear term. Fit this model using `lm()` and report the estimate of $g$. Compare your answer to the earth's actual [gravitational acceleration](https://en.wikipedia.org/wiki/Gravitational_acceleration) at sea level of $9.8m/s^2$. 
+
+
+
+2. Create a scatterplot of the data, and ovelay it with your fitted function from the previous part, and the theoretical values from Newton's law with $g=9.8m/s^2$. 
+
+
+3. [EXTRA] (Non-statistical question) Why do you think there is such a  discrepancy between our estimate and the actual value of $g$?
+
+
+***
+
+Use the fuel consumption data for the remaining questions. A nonparametric model of combined mileage vs engine size is shown belom. 
+```{r, message = FALSE}
+fcr = read_csv("../data/2018 Fuel Consumption Ratings.csv") %>%
+  mutate( MAKE = factor(MAKE), CLASS = factor(CLASS) )
+
+fcr %>% ggplot(aes(x = ENGINE_SIZE, y = COMB)) +
+  geom_point() + geom_smooth( )
+```
+
+There seems to be a slight nonlinearity in the model. You will explore if this makes a difference for prediction. 
+
+4. Fit a *GAM* model with specification: `COMB ~ s(ENGINE_SIZE) + CYLINDERS + MAKE + CLASS`, (where we use a smooth function of `ENGINE_SIZE`. Report the standard deviation of the model residuals.
+
+
+
+5. Fit a *linear* model with specification: `COMB ~ ENGINE_SIZE + CYLINDERS + MAKE + CLASS`, and report the standard deviation of the model's residuals.
+
+
+
+
+
+6. Fit a *regression tree* model with specification: `COMB ~ ENGINE_SIZE + CYLINDERS + MAKE + CLASS` and `control = list(cp = .001)`, and report the standard deviation of the model's residuals.
+
+
+
+7. The code below loads the fuel consumption data for 2019 models.
+```{r, message = FALSE}
+fcr_new = read_csv("../data/2019 Fuel Consumption Ratings.csv") %>% 
+   mutate( MAKE = factor(MAKE), CLASS = factor(CLASS) )
+```
+Use each of the three models you fit (gam, linear, tree), to make predictions for the 2019 data, and report the standard deviation of the prediction error for each one. Which model has the best out-of-sample performance?
+
+

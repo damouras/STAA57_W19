@@ -1,0 +1,56 @@
+***
+
+**Goal**: Practice multi-feature classification with logistic regression and classification trees. 
+
+
+```{r, include=FALSE}
+library(tidyverse)
+library(rpart)
+```
+
+You will work with the following toy data. 
+```{r}
+set.seed(123)
+toy = tibble( X1 = rnorm(100), X2 = rnorm(100) ) %>% 
+  mutate( actual = factor( X1^2 + X2^2 < 1.4 ) )
+ggplot( toy, aes(x = X1, y = X2, col = actual )) + geom_point()
+```
+
+1. Fit a logistic regression model to the toy data and report the confusion matrix.  
+
+2. Plot the decision boundary of your linear classifier from the previous part. Use `geom_abline()`, with *intercept* and *slope* arguments given by the following representation of the linear decision boundary $$\beta_0 + \beta_1 x_1 +  \beta_2 x_2 = 0 \Rightarrow  x_2 =  -\frac{\beta_0}{\beta_2} - \frac{\beta_1}{\beta_2} x_1$$
+
+3. The following code fits a classification tree to the data.
+```{r}
+library(rpart)
+rpart_out = rpart( actual ~ X1 + X2, data = toy, method = "class" )
+```
+Report the model's confusion matrix.
+
+4. Plot the decision tree from the previous part.
+
+5. Find the predicted class for the point $(X1=.5, X2=1)$.
+
+6. Which of the following plots, if any, represents your decision tree?
+
+![](img/toy_tree.PNG)
+
+7. Create a new *distance* variable as follows: $D = \sqrt{ X_1^2 + X_2^2}$. Create a colored histogram for the distance variable; what is the best classification accuracy you can achieve by thresholding it?
+
+*** 
+For the remainder, consider the same data but with completely *random labels*, with equal probability.
+
+```{r}
+set.seed(1234)
+toy = toy %>% 
+  mutate( actual.rand = factor( sample( c(T,F), size = 100, replace = T ) ) )
+ggplot(toy, aes(x = X1, y = X2, col = actual.rand) ) + geom_point()
+```
+
+
+8. What should be the accuracy of *any* classifier that tries to predict these random labels?
+
+9. Report the accuracy of a) logistic regression, and b) classification tree, on the random labels. Which one has higher accuracy?
+
+
+

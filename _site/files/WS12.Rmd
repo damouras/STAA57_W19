@@ -1,0 +1,47 @@
+*** 
+
+**Goal**: Explore topics in hypothesis testing (power, effect size, data snooping) using simulation
+
+```{r, include=FALSE}
+library(tidyverse)
+lfs = read_csv('./data/LFS_Toronto.csv') 
+```
+
+
+
+1. Using LFS data, we found that women earn less than men on average, with an effect size of $d=0.336$. Verify the value of the effect size directly from the data using the formula
+$$d = \frac{ \hat{\mu}_1 - \hat{\mu}_2 }{ S_{pooled} } = \frac{ \hat{\mu}_1 - \hat{\mu}_2 }{ \sqrt{ S^2_{pooled} } }$$ 
+The pooled variance is given by
+$$ S^2_{pooled} = \frac{ S^2_1  (n_1-1) + S^2_2  (n_2-1)}{(n_1-1) + (n_2-1)} $$ 
+where $n_{1/2}, S^2_{1/2}$ are the sample sizes and variances of the two groups (men/women) respectively.   
+(Hint: group the relevant data by `sex`, apply summary functions for means/variances/counts, and combine the resulting values accordingly)
+
+***
+
+We will now explore the notion of power through a simulation experiment. The following code generates $100,000$ flips of a *fair* coin, grouped into 1000 repetitions (`rep`) of 100 flips each. 
+
+```{r}
+set.seed(123)
+sim_H0 = 
+  tibble( rep = 1:1000 ) %>% 
+  group_by( rep ) %>% 
+  do( tibble( flip = sample( c("H","T"), size = 100, replace = TRUE) ) ) %>%
+  ungroup()
+glimpse(sim_H0)
+```
+
+2. Calculate the *proportion of heads* for each group; you can think of the resulting values as $1000$ samples of the test statistic ($\hat{p}$) under the null hypothesis $H_0: p = .5$, for a fixed sample size of $n=100$. 
+Draw the density plot of the proportion values; this represents the sampling distribution under $H_0$. Calculate the 95% quantile and overlay it as a vertical line on the plot. 
+
+3. Suppose we want to test $H_0: p \leq .5$ vs $H_A: p>.5$ at significance level $\alpha = 5\%$. For power calculations, we have to consider specific alternatives in $H_A$. Assume we are interested in the alternative $p=.6$ (i.e. an "effect size" of .6-.5=.1). Simulate a *new* set of flips under $p=.6$, with 1000 repetitions of $n=100$ samples, and overlay the resulting statistic density on the previous plot. 
+
+4. Estimate the *power* of the test, i.e. the probability that a sample under $H_A: p=.6$  would *reject* $H_0$ at $\alpha = 5\%$. The power is estimated by the proportion of samples under $p=.6$ that give a test statistic greater than the 95% quantile under $H_0: p=.5$. 
+
+5. Repeat the previous calculation under the alternative $p = .7$, i.e. for a *larger* effect size. What happens to the power?
+
+6. Repeat the previous calculation for a sample size of $n=50$ (and 1000 repetitions); i.e. calculate the power for a *smaller* sample size, keeping the same $p=.7$. Note that you will have to *recalculate* the quantile under $H_0:p=.5$ as well. What happens to the power?  
+
+7. Repeat the previous calculation for a significance level of $\alpha = 1\%$, all other things being the same. What happens to the power?  
+
+8. [EXTRA] Assume you are testing $H_0: p \leq .5$ vs $H_A: p > .5$ with $n=50$ and a test statistic cut-off of .6 (i.e. you reject $H_0$ if $\hat{p}>.6$). From the 1000 samples you generated from $H_0: p=.5$, what proportion reject the null $H_0$? How many independent samples would you have to check, on average, before you find a significant one?
+

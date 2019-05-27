@@ -10,9 +10,12 @@ Various open data used throughout the course:
 - [Dinesafe Data](https://www.toronto.ca/city-government/data-research-maps/open-data/open-data-catalogue/#e3c15b0f-5f83-0f12-fabb-c84018395c38): Toronto food inspections info ([data](/files/dinesafe.csv))
 - [Bike Share Data](https://www.toronto.ca/city-government/data-research-maps/open-data/open-data-catalogue/#343faeaa-c920-57d6-6a75-969181b6cbde): Toronto's bicycle sharing program info ([data](/files/bikeshare.zip)/[codebook](/files/bikeshare_codebook.pdf))
 - [Building Permit Data](https://www.toronto.ca/city-government/data-research-maps/open-data/open-data-catalogue/#34ed8adf-92ac-c333-b7de-2b644854cb6e): Toronto building permit information ([data](/files/clearedpermits.zip)/[codebook](/files/build_perm_codebook.pdf))
-- [Fuel Consumption Ratings](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64): fuel consumption & CO2 emissions for new vehicles sold in Canada (data/codebook)
+- [Fuel Consumption Ratings](https://open.canada.ca/data/en/dataset/98f1a129-f628-4ce4-b24d-6f16bf24dd64): fuel consumption & CO2 emissions for new vehicles sold in Canada ([data](/files/fuel_consumption_ratings.zip))
+
+<!--
 - [Winsconsin Diagnostic Breast Cancer] ([data](/files/wdbc.csv))
 - [MNIST](https://www.blah.com) handwritten digit data
+-->
   
 ### Computing
 

@@ -1,0 +1,186 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+## Lecture Goals 
+
+- Learn how to:
+    + Analyse textual data 
+    + Use regular expressions for string manipulation
+    
+- Readings 
+    + [R4DS](http://r4ds.had.co.nz/): ch. 14
+    + String Manipulation  [cheatsheet](https://github.com/rstudio/cheatsheets/raw/master/strings.pdf)
+
+
+## Strings
+
+- Text represented as *sequence of characters* called *string*
+    + `char` data type in R, indicated by double quotes (`" "`)
+    
+```{r, collapse = TRUE}
+typeof("my text")
+```
+
+- String different from *vector* of characters in R
+```{r, collapse = TRUE}
+a = "string"
+b = c("v", "e", "c", "t", "o", "r")
+rev(a)
+rev(b)
+```
+
+## String Operations
+
+- Look at 4 basic string operations 
+    + *Detection*
+    + *Subsetting*
+    + *Mutation*
+    + *Joining/Splitting*
+    
+- All operations are *vectorised*     
+
+
+## Dinesafe Data
+
+```{r, message=FALSE, collapse = TRUE}
+dinesafe = read_csv("../data/dinesafe.csv")
+details = dinesafe %>% select(INFRACTION_DETAILS)
+head(details)
+```
+
+## Detect
+
+- Look for matching character *pattern* in string
+    + `str_detect()` returns logical index (match/no match)
+    + `str_which()` returns integer index (row # of match)
+    + `str_count()` returns # matches 
+
+```{r, collapse = TRUE}
+details %>% 
+  mutate( no_wash = str_detect( INFRACTION_DETAILS, 
+                                "fail to properly wash" ) ) %>% 
+  summarise( mean(no_wash, na.rm = TRUE) )
+```
+
+## Regular Expressions
+
+- Simple patterns described by *fixed* strings
+    + E.g. sentence containing word "wash" 
+
+- More complicated patterns described by *regular expressions*
+    + E.g. name starting with "S"  
+    
+- Regular expressions define string *templates* using a combination of regular and special characters (*metacharacters*) 
+
+
+## Metacharacters
+
+- Wildcard ( $\rightarrow$ matching )
+    + `.` $\rightarrow$ *any* character (except newline)
+    + `\\s` $\rightarrow$ *any* whitespace 
+    + `\\d` $\rightarrow$ *any* number character (0-9)
+    + `\\w` $\rightarrow$ *any* letter or number character
+    
+- Anchors 
+    + `^` $\rightarrow$ start of string
+    + `$` $\rightarrow$ end of string
+    
+    
+## Metacharacters
+
+- Quantifiers 
+    + `*` $\rightarrow$ zero or more
+    + `+` $\rightarrow$ one or more
+
+- Alternates    
+    + `a|b` $\rightarrow$ a or b
+    + `[abc]` $\rightarrow$ a, b, or c (same as `[a-c]`) 
+
+## Metacharacters
+
+- Groups 
+    + `(ab)|a` $\rightarrow$ ab or a, vs
+    + `a(b|a)` $\rightarrow$ ab or aa
+
+- Look Arounds     
+    + `a(?=b)` $\rightarrow$ a *followed by* b (e.g. **a**bba)
+    + `(?<=a)b` $\rightarrow$ b *preceded by* a (e.g. a**b**ba)
+
+
+## Regular Expressions
+
+- Test regular expression on string using `str_view()/str_view_all()`
+
+
+```{r, results ='hide'}
+name = c("Tajinder", "Mustafa", "Liu Wei")
+str_view(name, "(^.a)|(.a$)")
+```
+
+![](img/regex.PNG)
+
+## Subset
+
+- Extract substrings 
+    + `str_subset()` return string with match
+    + `str_extract()` return matching pattern
+
+```{r, collapse = TRUE}
+dinesafe %>% 
+  distinct(ESTABLISHMENT_ID, .keep_all = TRUE) %>% 
+  pull(ESTABLISHMENT_NAME) %>% 
+  str_subset( pattern = "PIZZA" ) %>% length()
+```
+
+## Mutate
+
+- Change strings or parts thereof
+    + `str_replace()` replace pattern with string
+    + `str_to_lower/upper()` convert to lower-/upper-case 
+   
+```{r, collapse = TRUE}
+dinesafe %>% 
+  distinct(ESTABLISHMENT_ID, .keep_all = TRUE) %>% 
+  mutate( ESTABLISHMENT_NAME = str_to_upper(ESTABLISHMENT_NAME) ) %>% 
+  filter( str_detect(ESTABLISHMENT_NAME, "PIZZA") ) %>% dim_desc()
+```
+
+
+## Join 
+
+- Combine strings across vector rows
+    + `str_c( , sep = " ")` defines *separator* strings
+    + `collapse = ""` collapses result vector into single string
+
+```{r, collapse = TRUE}
+str_c(1:3, name, sep = " - ")
+str_c(1:3, name, sep = " - ", collapse = ", ")
+```
+
+
+## Split
+
+- `str_split()` split string along pattern
+     + `str_split_fixed()` returns fixed # of pieces
+     
+```{r, collapse = TRUE}
+str_split(name, " ")
+str_split_fixed(name, "\\s", 2)
+```
+
+## More String Functions
+
+- `str_trim()` trim *whitespace*
+- `str_pad()` pad strings to constant width
+- `str_trunc()` truncate strings to constant width
+- `str_wrap()` wrap string to fixed width paragraph
+
+```{r, collapse = TRUE}
+str_pad(name, width = 10, side = "right")
+str_pad(name, width = 10, side = "right") %>% 
+  str_trim()
+```
+

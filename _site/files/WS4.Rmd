@@ -1,0 +1,32 @@
+```{r setup, include=FALSE}
+library(tidyverse)
+dinesafe = read_csv("../data/dinesafe.csv")
+```
+
+**Goal**: Master data transformation and summarization. 
+
+Use the dinesafe data.
+
+1. Find the average number of *distinct* daily inspections.
+
+2. Create a new *day-of-week* variable, call it DOW, using the `wday()` function in the `lubridate` package. Find the average number of distict daily inspections by day of 
+week.
+
+3. For each distinct inspection, find the time since the last inspection of the same establishment.  
+(Hint: use the `lag()` window function )
+
+
+4. Find the *average* number of days between inspections, grouped by the minimum number of inspections per year. Remove missing values from the average calculation, use `na.rm = TRUE` in the `mean()` function.  
+(Hint: when you subtract dates, you get the number of days between them)
+
+
+5. The results from the previous part suggest that Toronto Public Health actually *meets* its minimum inspections per year. This is the *opposite* conclusion to what you get by comparing the actual and expected number of inspections over the two-year period (code shown below). Explain which calculation you think is correct and why.
+
+```{r}
+dinesafe  %>% 
+  group_by(MINIMUM_INSPECTIONS_PERYEAR, ESTABLISHMENT_ID) %>% 
+  summarise(N_INSP_ACT = n_distinct(INSPECTION_ID)) %>% 
+  mutate(N_INSP_EXP = MINIMUM_INSPECTIONS_PERYEAR * 2, 
+         N_INSP_DIF = N_INSP_ACT - N_INSP_EXP) %>%
+  summarise(AVG_INSP_DIF = mean(N_INSP_DIF))
+```

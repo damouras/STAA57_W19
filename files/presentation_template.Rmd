@@ -1,0 +1,41 @@
+---
+title: "Project title"
+author: "Group #, Team member names"
+output:
+  ioslides_presentation: default
+  widescreen: yes
+---
+
+## Introduction
+
+- Briefly describe 
+    + The questions you looked at 
+    + The data you used to address them 
+
+
+## Analysis (change title as you see fit)
+
+- This is where the bulk of your analysis goes
+    + You can include plots, tables, or other information
+    + *Do not include raw or unformatted code/output*
+
+- First analysis slide
+
+## Analysis (change title as you see fit)
+
+- Second of analysis slide 
+
+
+## Analysis (change title as you see fit)
+
+- Third analysis slide
+
+## Conclusions
+
+-  Summarize your results and main conclusions
+-  Mention any additional considerations
+    + E.g. analysis limitations or other concerns 
+
+
+
+

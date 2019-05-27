@@ -1,0 +1,54 @@
+```{r, include=FALSE}
+rm(list=ls())
+library(tidyverse)
+```
+
+
+*** 
+
+**Goal**: Practice measuring out-of-sample performance and avoiding overfitting.
+
+
+#### Indian Patient Data
+The [Indian Liver Patient (ILP)](https://archive.ics.uci.edu/ml/datasets/ILPD+%28Indian+Liver+Patient+Dataset%29) data contain 583 records of 10 features based on various medical tests, plus the variable `patient` indicating if the individual is a liver patient.
+
+```{r, message=FALSE}
+ilp = read_csv("data/ilp.csv") %>% 
+  mutate( patient = factor(patient))
+glimpse(ilp)
+```
+
+1. Split the data into training and testing (80%-20%). Fit a classification tree (default parameters), and report its training and test set accuracy.
+
+2. Select an *optimal* tree model using cross-validation. Use the control options `rpart.control(minsplit = 1, cp = 0)` to grow the full tree, and then prune it down to select the one with the minimum cross-validation error. Report your new model's training and test set accuracy. 
+
+3. Create 95% confidence interval for the test accuracy of your optimal tree, using bootstrap 1000 samples (can use `infer` package) . Does the optimal model improve significantly over the first one?
+
+4. Plot the optimal tree model; does it help predict liver disease? Justify your answer.
+
+
+#### Simulation experiment 
+
+We will use a simulation experiment to explore overfitting. Consider $N=1000$ observations with random (equiprobable) binary response variable (`Y`), and $p=250$ unrelated random features (`V1:V250`). 
+
+```{r}
+N = 1000; p = 250; 
+set.seed(123)
+toy = as_tibble( matrix( rnorm(N*p), ncol = p) ) %>% 
+   mutate( Y = sample( c(0,1), size = N, replace = TRUE ) ) 
+```
+
+4. What should be the out-of-sample performance of *any* classifier applied to such data? Explain.
+
+
+5. Split the data into training and test sets (80%-20%). Fit a logistic regression model using all 250 feature variables, and report its training and test accuracy. Do you believe there is overfitting? 
+
+6. Repeat the previous part using only the first 50 feature variables. Do you see any difference? Explain why you think that is.
+(Hint: `select` the first 50 columns to feed into the model)
+
+
+7. Use cross-validation to estimate the out-of-sample error of the model with all 250 features. Split the training data into 5 non-overlapping folds, fit the model to each fold and calculate its error, and finally report the average cross-validation error over all folds. 
+
+
+8. Simulate $N=5000$ observations (rather than 1000) and fit the model with all 250 variables again. Report the training and test error (80%-20% split), what do you observe? 
+

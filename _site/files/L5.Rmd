@@ -1,0 +1,123 @@
+<!--  
+ -->
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+## Lecture Goals 
+
+- Learn how to:
+    + Work w/ relational data
+    + Join/merge data-frames
+    + Append/bind data-frames
+ 
+- Readings 
+    + [R4DS](http://r4ds.had.co.nz/): ch. 13
+    + Data Wrangling [cheatsheet](https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf)
+
+
+## Relational Data
+
+- **Databases** are organized collections of data 
+    + Implemented through some *DB Management Systems* (e.g. Oracle)
+
+- Majority of DBs use **relational model** of data ogranization
+    + Data live in multiple inter-related tables
+    + *SQL* is standard language for managing relational DB's 
+
+## Relational Data
+
+- Sample university database
+![](img/university_DB.gif)
+
+## Keys 
+
+- Tables are connected through variable(s) called **keys**
+    + Keys are used to identify/relate observations
+     
+- Two types of keys
+    + **Primary** keys *uniquely* identify observations *within a table*
+    + **Foreign** keys *associate* observations with those in *other tables*
+
+## Relationships 
+
+- Primary/foreign key pairs establish **relationships** between tables
+
+- Three types of relationships
+    + **One-to-one**: primary-primary pair
+    + **One-to-many**: primary-foreign pair
+    + **Many-to-many**: (primary-foreign) [*junction table*] (foreign-primary) pairs 
+
+
+## Mutating Joins
+
+- Expand left/right table with variables from other table, matching observations where possible 
+
+![](img/left_join.PNG)
+
+```{r, include = FALSE}
+x = data_frame(V1=1:3, V2=c("a","b","c"))
+y = data_frame(V1=c(1,3,4), V3=c(F,T,F))
+x %>% inner_join(y, by="V1")
+x %>%  full_join(y)
+```
+
+## Mutating Joins
+
+- Merge tables' variables, keeping *only matching* (inner join) or *all* (full join) observations
+
+![](img/inner_join.PNG)
+
+```{r, include = FALSE}
+x %>% inner_join(y, by="V1")
+x %>%  full_join(y)
+```
+
+
+## Filtering Joins
+
+- Filter observations in one table, based on whether they *match* (semi join) or *not* (anti join) with other table
+
+![](img/filter_join.PNG)
+
+
+```{r, include = FALSE}
+x %>% semi_join(y, by="V1")
+x %>%  anti_join(y)
+```
+
+
+## Set Operations 
+
+- Operations on sets or observations (rows) with the same variables
+
+![](img/set_ops.PNG)
+
+```{r, include = FALSE}
+x = data_frame(V1=1:2, V2=c("a","b"))
+y = data_frame(V1=2:3, V2=c("b","c"))
+union(x,y)
+intersect(x,y)
+setdiff(x,y)
+```
+
+
+## Binding
+
+- Append table rows/columns 
+
+![](img/binding.PNG)
+
+
+```{r, include = FALSE}
+x = data_frame(V1=1:2, V2=c("a","b"))
+y = data_frame(V1=3:4, V3=c("c","d"))
+bind_cols(x,y)
+bind_rows(x,y)
+```
+
+

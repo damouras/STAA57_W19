@@ -1,0 +1,60 @@
+```{r, include=FALSE}
+library(tidyverse)
+```
+
+*** 
+
+**Goal**: Practice multiclass classification and resampling methods (random forests, undersamping).
+
+#### MNIST Data 
+
+We will use a subset of the [MNIST](https://en.wikipedia.org/wiki/MNIST_database) database of handwritten digits. The goal is to create a model that can accurately recognise (predict) the digit corresponding to each picture. The data consists of the actual digit ($Y \in {0,\ldots,9}$), and 784 pixel intensities, from the 28-by-28 digit images. A sample of the data is visualized below (you only need to work with the `mnist` data-frame, the remaining code is for plotting, adapted from [here](https://dzone.com/articles/exploring-handwritten-digit-classification-a-tidy)).
+
+```{r}
+mnist = read_csv("../data/mnist.csv") %>% 
+  mutate( digit = factor(digit))
+
+pixels_gathered = mnist %>% 
+  mutate( image = row_number() ) %>%
+  gather( pixel, value, -digit, -image) %>%
+  tidyr::extract(pixel, "pixel", "(\\d+)", convert = TRUE) %>%
+  mutate(pixel = pixel - 2,
+         x = pixel %% 28,
+         y = 28 - pixel %/% 28)
+
+pixels_gathered %>% filter(image  <= 3) %>%
+  ggplot(aes(x, y, fill = value)) + geom_tile() +
+  facet_wrap(~ image + digit, labeller = "label_both")
+```
+
+
+1. Split the mnist data into training and test sets (75%-25%). Fit a  full tree to the training data, and used cross-validation to select the simplest model within one standard deviation of the lowest error. Report the confusion matrix and accuracy of the resulting model on the test data. 
+
+
+2. Now fit a *random forest* with 250 trees to the training data, and report the confusion matrix and accuracy on the test data. How does the model compare to the previous one?
+
+
+3. Based on your confusion matrix from the previous part, which digit seems the most difficult to classify correctly. For that digit, what other digit does it get mistaken with more often? 
+
+
+
+#### Credit Card Data
+
+These data come from a Taiwanese credit card company (from [UCI's ML data repo](https://archive.ics.uci.edu/ml/datasets/default+of+credit+card+clients)). The goal is to predict which clients will *default* on their credit card payments, based on their profile and past payments. 
+
+```{r, message=FALSE}
+ccd = read_csv("../data/credit_card_default.csv") %>% 
+  mutate( default = factor( default ))
+```
+
+4. Find the proportion of classes (`default` 0 or 1) in data. Split the data into training and test sets (80%-20% respectively), and report the proportion of classes within each set.
+
+
+5. Fit a classification tree to the training data, using `rpart()` with controls `cp = .001' and minsplit = `1`. Apply the model to the test set and report the confusion matrix. Caclulate the test set accuracy, *Precision*, *Recall*, and *F-measure* (where positive is default).
+
+
+6. Create a balanced version of the training set using *undersampling*. Keep all the minority class observations in the training set, and randomly sample an equal number of majority class observations; your resulting training set should be smaller but perfectly balanced. Fit a classification tree to this new training set and report the same measures (confusion matrix, accuracy, precision recall, and F1 measure) for the *same* test set. 
+
+
+7. How do the recalls and precisions of the original and undersampled models compare? Which model would you use if you were a bank manager choosing which clients to give credit to? Justify your answer.
+

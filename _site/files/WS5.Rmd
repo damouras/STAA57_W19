@@ -1,0 +1,26 @@
+```{r , include=FALSE}
+library(tidyverse)
+rm(list=ls())
+```
+
+**Goal**: Master working with relational data.
+
+This worksheet used open data on global flight routes, available at [openflights.org](https://openflights.org/data.html). I have read the data into R and saved it in `flights.RData`; you can read the data in your session using `load()`. This will create four data-frames: *airlines*, *airports*, *planes*, and *routes*. The data-frames describe airline routes airlines around the world (circa 2014), together with information on plane type and airports.  
+
+```{r}
+load("data/flights.RData")
+ls()
+```
+
+1. Look at the data and identify for each table any *primary* and/or *foreign* key variables. 
+
+
+2. List the names of all airlines that fly into Toronto Pearson airport (IATA code "YYZ")
+
+3. Find all routes flying *out of* London, UK.
+
+4. Find the names of all *airlines* that fly *into Canada* (i.e. depart from abroad and arrive in Canada). 
+
+5. Find the total distance travelled over all Air Canada routes. To find the distance  between the departure and arrival airport of a route, you can apply the `geosphere::distGeo()` function to their coordinates (LONGITUDE, LATITUDE). This will give you the *geodesic*, i.e. the distance (in meters) of the *shortest path*  along the surface of the earth between two points.  
+(Hint: use the syntax `geosphere::distGeo( cbind(long.x, lat.x), cbind(long.y, lat.y) )   ` )
+

@@ -1,0 +1,36 @@
+***
+
+**Goal**: Practice multiple regression using factor variables.
+
+You will work with the fuel consumption data for new cars in 2018 & 2019, and examine *combined* fuel consumption (`COMB`) vs other variables. 
+
+```{r, message=FALSE}
+rm(list=ls())
+library(tidyverse)
+fcr = read_csv("../data/2018 Fuel Consumption Ratings.csv") %>% 
+  filter( FUEL %in% c("X", "Z") ) %>% 
+  mutate( FUEL = factor( FUEL, levels = c("X", "Z", "D", "E", "N"), 
+         labels = c("Regular", "Premium", "Diesel", "Ethanol", "Nat Gas")) )
+new_fcr = read_csv("../data/2019 Fuel Consumption Ratings.csv") %>%
+  filter( FUEL %in% c("X", "Z") ) %>% 
+  mutate( FUEL = factor( FUEL, levels = c("X", "Z", "D", "E", "N"), 
+         labels = c("Regular", "Premium", "Diesel", "Ethanol", "Nat Gas")) )
+```
+
+
+1. The variable `CLASS` describes the car category ("COMPACT", "SUV - SMALL", etc.). Sort the categories by the number of new car models (2018 data only).
+
+
+2. Fit a regression model for `COMB` (in L/100km) with `ENGINE_SIZE`, `CYLINDERS`, and `CLASS` as explanatory variables, and no intercept or interactions. Based on your results, rank the categories from most to least fuel-efficient.
+
+3. Plot the residuals vs the fitted values of the model. What is the standard deviation of the residuals (use `broom::glance`)? 
+
+4. Use the previous model to *predict* the fuel consumption of the 2019 models (data-frame `new_fcr`). Plot the actual (y-axis) vs fitted (x-axis) values, and calculate the standard deviation of the prediction errors.
+
+5. Use `fct_lump()` to keep the top 5 categories & combine the rest in "Other" (2018 data). Fit a regression model for `COMB` with `ENGINE_SIZE` and `CLASS` as explanatory variables with *interaction*, and report the resulting parameter estimates.
+
+
+6. Based on your previous model, write down the linear function formula for the FULL-SIZE car class, including the actual values of the coefficients. 
+
+
+

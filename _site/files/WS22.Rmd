@@ -1,0 +1,73 @@
+```{r, include=FALSE}
+library(tidyverse)
+library(modelr)
+library(broom)
+```
+
+**Goal**: Practice regularization and variable selection for regression. 
+
+***
+
+We will use the 2018 fuel consumption data, with `MAKE`, and `CLASS` as factor variables, lumped along their least frequent levels. The data is split along a training (70%) and test set.
+```{r, results='hide'}
+fcr = read_csv("../data/2018 Fuel Consumption Ratings.csv") %>% filter( FUEL %in% c("X","Z") ) %>% 
+  mutate( 
+    MAKE = factor(MAKE) %>% fct_lump(20) %>% fct_relevel("Other"),
+    CLASS = factor(CLASS) %>% fct_lump(10) %>%       fct_relevel("Other") ) %>%  
+  select( COMB, MAKE, CLASS, ENGINE_SIZE, CYLINDERS) 
+
+my_seed = 123
+set.seed(my_seed)
+train = fcr %>% sample_frac(.7)
+test = setdiff(fcr, train)
+```
+
+1. Fit a regression tree for `COMB ~  ENGINE_SIZE + CYLINDERS + MAKE + CLASS` with control parameters `rpart.control( minsplit = 10, cp = 0)`. Report the standard deviation of the model errors for the train and test sets.
+
+
+2. You will use *regularization* based on the cross-validation results from the model you fit. Choose the complexity penatly (`cp` parameter) for the simplest model with a cross-validated error (`xerror`) withing one standard deviation (`xstd`) of the minimum error. Prune your model according to the `cp` value you chose, and report standard deviation of prediction errors for the train and test sets. Describe what happens to the in-sample and the out-of-sample performance 
+
+
+
+3. The `cptable` of your model from part 1. contains a column with the number of splits (`nsplit`), the relative training error (`rel error`), and the cross-validated relative error (`xerror`). The following piece of code adds an extra column (`test_error`) with the relative *out-of-sample* error, caclulated based on the test set. Recreate the plot below showing the training, cross-validated, and test error, versus the tree model's complexity (number of splits). 
+
+```{r }
+as_tibble( tree_out$cptable ) %>% 
+  group_by(CP) %>% 
+  mutate( test_error = test %>%
+            add_predictions( prune(tree_out, CP)) %>%
+            summarise( var(COMB - pred)) %>% 
+            pull() / var( train$COMB ) )
+```
+
+![](img/rel_x_error.PNG)
+
+
+
+***
+
+The following code adds 30 randomly generated $X$ variables to the fuel consumption data, and splits it into a new training and test set.
+
+```{r}
+N = nrow(fcr); p = 30
+random = data.frame( replicate( p, rnorm(N) ) )
+fcr_rnd = fcr %>% 
+  select(COMB, MAKE, CLASS, CYLINDERS, ENGINE_SIZE) %>% 
+  bind_cols( random )
+
+set.seed(my_seed)
+train_rnd = fcr_rnd %>% sample_frac(.70)
+test_rnd = setdiff( fcr_rnd, train_rnd)
+```
+
+4. Fit a *linear regression* model for `COMB` versus `MAKE`, `CLASS`, `CYLINDERS`, `ENGINE_SIZE`, and *all* of the randomly generated $X$ variables to the training data; report the training and test error standard deviation.
+
+
+
+5. Perform *variable selection* by running `step()` on your previous model, and report the resulting training and test error standard deviation. Did variable selection discard all of the irrelevant (random) variables?
+
+
+6. Fit the simple linear regression model for `COMB ~ 
+MAKE + CLASS + CYLINDERS + ENGINE_SIZE`, and report the training and test error standard deviation. 
+
+

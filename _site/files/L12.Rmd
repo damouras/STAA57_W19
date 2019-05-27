@@ -1,0 +1,190 @@
+<!-- 
+output: html_notebook 
+
+output:
+  ioslides_presentation:
+    transition: 0
+    logo: img/logo.png
+-->
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+lfs = read_csv('../data/LFS_Toronto.csv') 
+
+```
+
+
+## Lecture Goals 
+
+- Examine hypothesis testing more closely 
+    + Understand Error Types
+    + Use Power & Effect Size
+- Identify hypothesis testing pitfalls
+    + Prevent Data-Snooping
+    + Employ best practices
+
+- Readings 
+    + [ISRS](https://www.openintro.org/download.php?file=isrs1_tablet&referrer=/stat/textbook.php): ch. 2.1-2.4
+
+
+## Hypothesis Testing Review
+
+
+- Set up competing hypotheses
+    + $H_0$ presumed true
+    + $H_A$ carries burden of proof
+
+- Collect data & measure how likely they are under $H_0$
+    + Calculated relevant test statitic 
+    + Compare to sampling distribution under $H_0$  
+
+- *P-value*: probability of observing equally or more extreme statistic value under $H_0$ (P-value)
+
+- Reject $H_0$ if P-value is smaller than *preset* cutoff called *significance level* ($\alpha$)
+
+## Hypothesis Testing Errors
+  
+- There are two types of errors one can do
+     + **Type I Error**: reject $H_0$ when it is true
+     + **Type II Error**: fail to reject $H_0$ when it is false
+     
+    
+![](./img/table.PNG)
+
+## Controlling Errors
+  
+- There is a *trade-off* between the two types of errors 
+
+- Significance level $\alpha$ reflects *probability of making TYpe I Error*
+    + Focus on controlling wrongful rejection of $H_0$
+    
+- Hypothesis testing *does not* controll Type II Error
+    + Difficult in practice, must consider *all* alternatives
+
+## Example 
+
+- Consider $H_0: \mu \leq 0$ vs $H_A: \mu > 0$
+      + *Specific* alternative (e.g. $\mu=.5$) allows calculation of Type II Error probability (called $\beta$)
+
+![](./img/type2.PNG)
+
+(https://rpsychologist.com/d3/NHST/)
+
+## Statistical Power
+
+- For fixed $\alpha$, every test has *same* probability of Type I Error 
+     + Same chance of rejecting $H_0$ when it is true
+
+- But tests can have *different* Type II Error probabilities
+     + *Power*: probability of rejecting $H_0$ for *some* altervative in $H_A$, i.e. Power = $1-\beta$
+     + Want test to have good power against *all* alternatives 
+
+- In hypothesis testing, *presume* $H_0$  
+     + P-value checks whether data are *inconsistent* with $H_0$
+     + Power tells us how *discerning* test is w.r.t. alternatives 
+
+## Effect Size
+
+- Assume you *reject* $H_0: \mu = 0$ in favor of $H_A: \mu \neq 0$
+     + Test says data are *unlikely* to have come from $H_0$
+     + Doesn't specify how *far* they are from $H_0$
+     
+- E.g. can have same P-value for: large $n$ & small $\hat{\mu}$, or small $n$ & large $\hat{\mu}$ 
+
+- **Effect size** measures *magnitude* of phenomenon, irrespective of sample size
+      + (In practive, all tests *eventually reject* $H_0$ given enough data) 
+      + Effect sizes are important for Power/sample size calculations, and for combining results of multiple studies
+    
+## Example 
+
+- Found *statistically significant* (P-value < $10^{-15}$) gender pay differences at BSc level 
+
+```{r, fig.width=7, fig.height=4, echo=FALSE, message=FALSE}
+lfs %>% filter( educ == 5) %>% drop_na(hrlyearn) %>% 
+  mutate( sex = factor(sex, levels = 1:2, labels = c("M","F"))) %>% 
+  ggplot( aes(x = hrlyearn, fill = sex, alpha = .3 ) ) +
+  geom_density() +  guides( alpha = FALSE)
+```
+
+## Example
+
+- Effect size for means measured by (Cohen's) $d = \frac{ \hat{\mu}_1 - \hat{\mu}_2 }{S_{pooled}}$ 
+    + $S_{pooled}$ measures combined variability 
+
+```{r, collapse = TRUE, warning=FALSE, message=FALSE}
+library(effsize)
+lfs %>% filter( educ == 5 ) %>% 
+  mutate( sex = factor(sex) ) %>% 
+  cohen.d( hrlyearn ~ sex, data = .) 
+```
+
+## Effect Size 
+
+- Typical interpretation of effect sizes
+
+| Size	| Effect |
+| --- | --- |
+| $0.0 - 0.2$ | Negligible |
+| $0.2 - 0.5$ | Small |
+| $0.5 - 0.8$ | Medium |
+| $0.8+$ | Large |
+
+
+## Effect Size Interpretation
+
+![](img/EffectSize.PNG)
+
+(https://rpsychologist.com/d3/cohend/)  
+
+
+## Power, Effect & Sample Size 
+
+- Always report sample & effect sizes for your test (not just P-value)
+      + Help quantify importance and combine with other studies ([meta-analysis](https://en.wikipedia.org/wiki/Meta-analysis))
+     
+- Use power *prior to study*, to determine required *sample size* 
+      + How many observations are needed to discern effect (correctly reject $H_0$) of size d with desired power (1-$\beta$) for a given significance ($\alpha$)?
+      + E.g. for $\alpha = 5\%, d = .40, 1-\beta = 80\% \Rightarrow n = 49$ (https://rpsychologist.com/d3/NHST/)
+      
+- *No point* in performing power calculations *after*  test 
+
+
+## Critique of Hypothesis Testing
+
+- In many disciplines, hypothesis testing became the standard of scientific discovery 
+     + Statistical significance was threshold to academic publishing
+
+- Poor scientific practices, arbitrary defaults ($\alpha = 5\%$), and outright manipulation led to a [*replication  crisis*](https://en.wikipedia.org/wiki/Replication_crisis)
+    + See [Why Most Published Research Findings Are False](https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0020124)
+
+- Most common offender is [*Data-snooping*](https://en.wikipedia.org/wiki/Data_dredging) (aka p-hacking, data-dredging/fishing)
+
+
+## Data Snooping
+
+![](img/significant.png)
+(https://imgs.xkcd.com/comics/significant.png)
+
+
+## Data Snooping 
+
+- At 5% significance, expect 1 in 20 (independent) tests to Reject $H_0$ even when it is true!
+
+- Snoop around data long engough, and you are *almost guaranteed* to find significant results at 5% level
+
+- Prevent data-snooping by separating *exploratory* from *confirmatory* data analysis
+      + Keep search for & test of hypotheses apart
+    
+
+## Best Practices 
+
+How to prevent hypothesis testing misuse
+
+- [*Study pre-registration*](https://www.pnas.org/content/115/11/2600): specify research questions & methodology *prior* to data-collection $\rightarrow$ prevent data-snooping
+
+- *Computational Reproducibility*: publish all data & code for analysis $\rightarrow$ prevent errors/manipulation 
+
+- Report *both positive and negative* results $\rightarrow$ prevent [publication bias](https://en.wikipedia.org/wiki/Publication_bias)
+

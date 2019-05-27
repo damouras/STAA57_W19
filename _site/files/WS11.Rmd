@@ -1,0 +1,66 @@
+***
+ 
+**Goal**: Perform hypothesis tests using simulation and randomization
+
+
+```{r, include=FALSE}
+library(tidyverse)
+```
+
+Use the Labour Fource Survey (LFS) data for Toronto.
+```{r, collapse=TRUE}
+lfs = read_csv('./data/LFS_Toronto.csv') 
+```
+
+1. You want to test if the *unemployment rate* is *different* for men & women. Formulate the null and alternate hypothesis in terms of the population unemployment rate parameters $p_F$ and $p_M$.
+
+
+2. Use the `coin::independence_test()` function to conduct the relevant hypothesis test. Filter observations outside the labour force, and create *factor* variables representing gender and employment to pass to the function's formula (when both variables are factors, the formula `Y ~ X` will test if `Y` proportions are equal across values of `X`). Report the test P-value, and state your conclusion at the 5% significance level.
+
+*** 
+Consider the following subset of the LFS data, containing hourly earnings (when available) of university-educated individuals aged 25-26.
+
+```{r}
+lfs_subset = lfs %>% 
+  filter( educ %in% 5:6, age_6 == 5 ) %>% 
+  mutate( educ = factor(educ, levels = 5:6, labels = c("BSc","MSc_PhD")) ) %>%
+  select( hrlyearn, educ) %>% drop_na()
+```
+
+3. Create side-by-side boxplots of the hourly earnings of BSc vs graduate (`MSc_PhD`) degree holders in the subset. Does there seem to be a significant difference in hourly wages. 
+
+4. You want to test if there is a difference in *average* hourly earning between BSc and MSc/PhD holder, i.e. $H_0: \mu_{BSc} - \mu_{MSc/PhD} =0$ vs $H_A: \mu_{BSc} - \mu_{MSc/PhD} \neq 0$. Use `coin::independence_test()` to perform the test, and report the P-value.
+
+
+***
+The sample average difference in hourly earning (`sample_pay_diff`) between `BSc` and `MSc/PhD` for the 25-26yr demographic is less than \$1/hr:
+```{r}
+sample_pay_diff = lfs_subset %>% 
+  group_by( educ ) %>% 
+  summarise( avg_pay = mean(hrlyearn, na.rm = TRUE) ) %>% 
+  spread(educ, avg_pay) %>% 
+  mutate( pay_diff = MSc_PhD - BSc ) %>% 
+  pull( pay_diff )
+sample_pay_diff
+```
+
+The code below generates 1,000 *permutations* of the data, i.e. 1,000 versions with randomly shuffled values of `educ`, and saves them in the data-frame `lfs_perm`.  
+
+```{r}
+set.seed(123) # fixes random numbers (permutations)
+lfs_perm = 
+  tibble( perm = 1:1000 ) %>% # create data-frame w/ permutation ID#
+  group_by(perm) %>% # for each permutation #
+  do( lfs_subset %>% mutate( educ = sample(educ) ) ) %>% # shuffle educ labels 
+  ungroup()
+glimpse(lfs_perm)
+```
+
+For the next two parts you will perform a permutation test *by hand*, i.e. you will run the steps that are performed under the hood of `independence_test()`, and compare results.
+
+5. Caclulate the statistic values, i.e. the *differences* in avg hourly earnings, for each of the 1,000 permutations. Plot the histogram of the permuted values, together with a vertical line at the original sample value. Does the sample value seem likely to have come from $H_0$?
+
+6. Calculate the P-value based on the permutations (i.e. the proportion of differences that are equally or further away from zero than the observed one). Is it consistent with the P-value you got from `independence_test()`? 
+
+7. Do you think that earnings for BSc and MSc/PhD holders are the same *in general*? What could be misleading with the particular demographic we focused on?
+

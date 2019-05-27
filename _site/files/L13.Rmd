@@ -1,0 +1,202 @@
+<!-- 
+output: html_notebook 
+
+output:
+  ioslides_presentation:
+    transition: 0
+    logo: img/logo.png
+-->
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+lfs = read_csv("../data/LFS_Toronto.csv")
+```
+
+
+## Lecture Goals 
+
+- Perform comparisons of multiple groups 
+    + Compare means/proportions 
+- Examine notion of variable (in)dependence
+    + Test for independence of catergorical variables
+    
+- Readings 
+    + [ISRS](https://www.openintro.org/download.php?file=isrs1_tablet&referrer=/stat/textbook.php): ch. 3.4, 4.4
+
+
+## Comparing Several Means
+
+- LFS data: are *average earnings* the same for different levels of education?
+    
+```{r, fig.width = 7, fig.height=4, echo=FALSE}
+lfs %>% 
+  mutate( educ = factor(educ) ) %>% 
+  drop_na(hrlyearn) %>% 
+  ggplot( aes( x = educ, y = hrlyearn ) ) +
+  geom_boxplot() + coord_flip()
+```
+
+## Education Levels
+
+
+| educ value | description |
+| --- | --- |
+| 0 | 0 to 8 years |
+| 1	| Some secondary |
+| 2	| Gr 11 to 13 |
+| 3	| Some post secondary |
+| 4	| Post secondary certificate or diploma |
+| 5	| University: bachelors degree |
+| 6	| University: graduate degree |
+
+
+##  Comparing Multiple Means
+
+- Test equality of \#$m$ group  means  $H_0: \mu_1 = \mu_2 = \cdots = \mu_m$
+
+
+- Could test all pairs ($\mu_1=\mu_2$, $\mu_2=\mu_3$, etc) and reject $H_0$ if any one is rejected 
+     + Problem with inflated Type I Error ([multiple testing](https://en.wikipedia.org/wiki/Multiple_comparisons_problem))
+
+
+- Instead, test for equality of all means *simultaneously* 
+     + Use ANalysis Of VAriance (*ANOVA*)
+     + Test statistic based on inter/intra-group variance
+
+## ANOVA
+
+- Idea: compare variance (i.e. average distance) from common mean to that from individual means
+
+![](img/ANOVA.PNG)
+
+
+## Permutation Test for ANOVA
+
+```{r, message=FALSE,warning=FALSE, collapse=TRUE}
+library(coin)
+lfs %>% 
+  mutate( educ = factor(educ) ) %>% 
+  kruskal_test( hrlyearn ~ educ , data = ., 
+                distribution = "approx" )
+
+```
+
+
+##  Comparing Multiple Proportions
+
+- Is *unemployment rate* the same for different levels of education?
+
+- **Contingency table** contains  frequencies of *combinations* of two categorical variables
+
+```{r, collapse = TRUE}
+lfs %>% 
+  filter(lfsstat != 4 ) %>% 
+  mutate( educ = factor(educ), empl = factor(lfsstat != 3)) %>% 
+  xtabs( ~ empl + educ, data = .) 
+```
+
+
+## Stacked Barplot
+
+```{r, fig.width = 7, fig.height=4}
+lfs %>% filter(lfsstat != 4 ) %>% 
+  mutate( educ = factor(educ), empl = (lfsstat != 3)) %>% 
+  ggplot( aes(x = educ, fill = empl)) + geom_bar()
+```
+
+
+## Contingency Tables
+
+- `prop.table()` for relative proportions 
+- `addmargins()` for table totals
+- apply across rows/cols (`margin = 1/2`)
+
+```{r, collapse = TRUE}
+lfs %>% filter(lfsstat != 4 ) %>% 
+  mutate( educ = factor(educ), empl = factor(lfsstat != 3)) %>% 
+  xtabs( ~ empl + educ, data = .) %>% 
+  prop.table( margin = 2 ) %>% 
+  addmargins( 1 ) %>%  round(4)
+```
+
+## Normalized Barplot
+
+
+```{r, fig.width = 7, fig.height=4}
+lfs %>% filter(lfsstat != 4 ) %>% 
+  mutate( educ = factor(educ), empl = (lfsstat != 3)) %>% 
+  ggplot( aes(x = educ, fill = empl)) + 
+  geom_bar(position = "fill")
+```
+
+
+## Mosaic Plot
+
+
+```{r, fig.width = 7, fig.height=4, collapse=TRUE, warning=FALSE}
+library(ggmosaic)
+lfs %>% filter(lfsstat != 4 ) %>% 
+  mutate( educ = factor(educ), empl = (lfsstat != 3)) %>% 
+  ggplot() + geom_mosaic(aes(x = product(educ), fill = empl)) + xlab("educ")
+```
+
+##  Comparing Several Proportions
+
+- Test equality of \#$m$ group proportions  $H_0: p_1 = p_2 = \cdots = p_m$
+     
+- Under $H_0$, it *does not matter* which group you are in
+     + Proportion are *independent* of groups
+ 
+![](img/mosaic.PNG)
+
+- Equivalent to testing **independence** of categorical variables (prop./group) 
+
+## Independence Test - Categorical Variables 
+
+- *Chi-square* ($\chi^2$) test statistic measures distance of *observed* from *expected* (under indep.) contingency table values 
+     + Sampling distribution under $H_0$ by simulation (sample observations according to independent proportions) 
+
+```{r, collapse = TRUE}
+library(coin)
+lfs %>% filter(lfsstat != 4 ) %>% 
+  mutate( educ = factor(educ), empl = factor(lfsstat != 3)) %>% 
+  chisq_test( empl ~ educ, data= ., distribution = "approx")
+```
+
+## Example
+
+- Chi-square test can be extended to multi-category variables
+    + E.g. Are education and marital status related?
+    
+```{r, collapse=TRUE}
+lfs %>% 
+  mutate( educ = factor(educ), marstat = factor(marstat)) %>% 
+  chisq_test( marstat ~ educ, data= ., distribution = "approx")
+```
+
+
+## Education vs Marital Status
+
+```{r, fig.width = 8, fig.height=5, echo=FALSE}
+lfs %>% mutate( educ = factor(educ), 
+          marstat = factor(marstat, levels = 1:6, labels = c("Married", "Common Law", "Widowed", "Separated",
+                               "Divorced", "Single") )) %>% 
+  group_by( educ, marstat ) %>% summarise( freq = n() ) %>% 
+  ggplot( ) + geom_mosaic( aes(weight=freq, x=product(educ), fill=marstat) ) +
+  xlab("educ") + ylab("")
+```
+
+
+## General Independence Test
+
+- `coin::independence_test()` provides general framework for comparing two or more groups
+    + Formula-based argument `Y ~ X`
+    + Compare `Y` values across levels of factor `X`
+
+- $Y$ variable type determines quantity to compare 
+    + Means for numeric $Y$
+    + Proportions for factor $Y$  
+    
+- Can use `independence_test()` for tests of equality of 2+ means/proportions 

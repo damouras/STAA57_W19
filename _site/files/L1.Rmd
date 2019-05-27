@@ -1,0 +1,213 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Introductions
+
+- Instructor: Sotirios Damouras
+     - Pronounced [s-aw-t-EE-r-ee-aw-s](https://www.youtube.com/watch?v=rV5hLFZxPls) or Sam
+     + Email: sdamouras@utsc.utoronto.ca
+     + Webpage: http://www.utsc.utoronto.ca/~sdamouras/
+     + Office hours: MO 11-13 / WE 11-13 / FR 13-15 @ IC456
+     
+- TA's
+     + Xichen (Sherry) He (xichen.he@mail.utoronto.ca)
+     + Jiali Pan (jiali.pan@mail.utoronto.ca)
+     + Xincheng Zhang (xincheng.zhang@mail.utoronto.ca)
+
+## About the course
+
+- [**Science**](https://en.wikipedia.org/wiki/Science): systematic organization & creation of *knowledge*, in form of *testable* explanations/predictions about the world
+
+- [**Data Science**](https://en.wikipedia.org/wiki/Data_science): field that uses scientific methods to *extract knowledge & insights from data* 
+     + [*Scientific method*](https://en.wikipedia.org/wiki/Scientific_method) invloves  making conjectures and testing them using observation or experimentation.
+
+<br>
+
+- In short, this course is about **answering questions using data**.
+
+
+## About the course
+
+- Unfortunately, cannot answer *every* question using data.
+
+<br>
+
+- But certain *types* of questions can be reasonably addressed with data
+    + **Estimation**: What % of the population gets the flu?
+    + **Inference**: Should I take drug X for the flu?
+    + **Prediction**: Will *I* get the flu?
+    
+## Data Science in Action
+
+![](img/DSexamples.PNG)
+    
+## Course Goals
+
+- Be able to conduct a *systematic investigation of a question/problem using data*. In particular:
+    + Organize  & manipulate data 
+    + Explore & investigate data graphically
+    + Deal with variability & estimation
+    + Formulate & test statistical hypotheses
+    + Discover patterns in data & use them for prediction
+    + Develop strong statistical computing skills 
+    + Communicate statistical ideas & results effectively
+
+
+## Resources 
+
+- Logistics
+    + *All* course material (lecture slides, assignments, grades, communications) available through [Quercus](https://q.utoronto.ca/)
+    
+- Textbooks
+    + [R for Data Science](http://r4ds.had.co.nz) 
+    + [Introductory Statistics with Randomization and Simulation](https://www.openintro.org/download.php?file=isrs1_tablet&referrer=/stat/textbook.php)
+    + [An Introduction to Statistical Learning](http://www-bcf.usc.edu/~gareth/ISL/)
+
+
+## Course Evaluation
+
+| Item | Weight | Notes |
+|------|--------|-------|
+| Worksheets | 15% | semi-weekly, best 20/23 |
+| Project    | 20% | progress reports & final presentation |
+| Midterm | 25% | computer-based |
+|Final | 40% | computer-based |
+
+
+## Course Project 
+
+- Project Topic [**Is university education worth it ?** ](https://www.theglobeandmail.com/report-on-business/is-the-university-experience-worth-the-cost/article31703109/)
+
+
+- Purposefully open-ended question; answer various aspects *using data*
+     + Collect and examine relevant data
+     + Formulate interesting questions 
+     + Use data to address them convincingly 
+
+
+## Course Project
+
+- Hope you don't drop out based on your analysis :) 
+
+![](img/return_on_degree.png)
+
+
+## Lecture Goals
+
+- Getting started with R/RStudio
+    + Using the RStudio IDE
+    + Quick run-through of R
+    + Writing *RMarkdown* reports 
+    
+- Readings
+    + Quick guide to [Rmarkdown](https://bookdown.org/yihui/rmarkdown/basics.html#basics)
+    
+
+## RStudio 
+
+- Install [R](https://cran.r-project.org/) and [RStudio](https://www.rstudio.com/) for Linux/Windows/Mac
+    + Alternatively, use cloud version at [RStudio Cloud](https://rstudio.cloud/)
+
+![](img/Rstudio_screen.png)
+
+## RStudio Workflow 
+
+- Create folder and associated [Rstudio project](https://support.rstudio.com/hc/en-us/articles/200526207-Using-Projects)
+    + Container for your data, code, and output files
+
+<br>
+
+- Write code (.R/Rmd scripts) in *Editor*
+- Run commands/scripts, interact with R in *Console*
+- Check available variables/data in *Environment*
+- Look at output/documentation/files in *Viewer*
+
+## R Philosophy 
+
+- Information is contained in **objects**
+    + E.g. data, variables, models, plots
+
+- Operations are performed by **functions**
+    + E.g. sorting data, fitting models, plotting results
+    
+- Carry out analysis by applying functions to objects
+
+```{r, collapse = TRUE}
+my_numbers = 1:3
+sum(my_numbers)
+```
+
+## R packages
+
+- R comes pre-loaded with basic functions; for extra functionality there are two options: 
+    + Create your own: *R programming*
+    + Use someone else's: *R Packages*
+
+- **R Packages** are bundles of reusable functions, data, & documentation
+    + Packages must be downloaded *once* w/ `install.packages()`
+    + To use a package, you must load it into R session w/ `library()`
+```{r, collapse = TRUE, eval = FALSE}
+install.packages("package_name")
+library(package_name)
+```
+
+## Getting Help
+
+- Get function documentation using `help()` or `?`
+    + See description, arguments, results & examples
+
+```{r, collapse = TRUE, eval = FALSE}
+help(fun_name)  
+? help 
+```
+   
+- For help on packages 
+```{r, collapse = TRUE, eval = FALSE}
+help( package = "package_name" )
+```
+
+## Input/Output
+
+- Read/write tabular data from/to spreadsheet-like file (.csv or comma separated values)
+```{r, collapse = TRUE, eval=F}
+my_data = read.csv( file = "C:/Users/Sotiris/Documents/data.csv")
+write.csv( my_data, file = "C:/Users/Sotiris/Documents/data.csv")
+```
+- Read/write binary representation of *select* R object 
+```{r, collapse = TRUE, eval=F}
+save( obj1, obj2, file = "C:/Users/Sotiris/Documents/my_objects.Rdata")
+```
+- Save *all* objects in `in .RData` file  
+```{r, collapse = TRUE, eval=F}
+save.image()
+```
+
+
+## Directories
+
+- Absolute file paths ('C:/Users/Sotiris/...') are **BAD** for reproducibility
+
+- Instead, use **relative** paths with respect to your **working directory**
+    + Find/set working directory with `getwd()`/`setwd()` 
+    + Access working directory directly with
+    
+```{r, collapse = TRUE, eval=F}
+getwd()
+my_data = read.csv( file = 'data_folder/data.csv')
+```
+
+## R Markdown
+
+- [Rmarkdown](https://rmarkdown.rstudio.com/) is a framework for creating *reproducible* reports
+
+- Rmarkdown scripts combine together:
+    + R code for performing data analysis
+    + [Markdown](https://en.wikipedia.org/wiki/Markdown) code for authoring documents
+
+- Actually, these very slides are written in Rmarkdown
+
+- Let's create your first report with Rmarkdown
+
+

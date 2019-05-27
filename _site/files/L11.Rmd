@@ -1,0 +1,214 @@
+<!-- 
+output: html_notebook 
+
+output:
+  ioslides_presentation:
+    transition: 0
+    logo: img/logo.png
+-->
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+set.seed(123)
+```
+
+
+## Lecture Goals 
+
+- Understand fundamentals of hypothesis testing
+    + Formulating hypotheses
+    + Calculating test statistics
+    + Interpreting P-values
+- Perform randomization tests for comparisons 
+    
+- Readings 
+    + [ISRS](https://www.openintro.org/download.php?file=isrs1_tablet&referrer=/stat/textbook.php): ch. 2.1-2.4
+
+
+## Hypothesis Testing
+
+- **Hypothesis**: claim about population, e.g.
+    + Proposal will pass popular vote
+    + Women are paid less than men
+    + Drug X is more effective than drug Y
+
+- **Hypothesis testing**: procedure for determining validity of hypothesis *based on sample evidence* 
+
+## Test Statistic
+
+- Associate hypothesis with a **test statistic**, i.e. quantity calculated from data
+
+- E.g. Interested in whether proposal will pass popular vote
+    + Test statistic is *proportion* of favourable votes
+
+- To assess hypothesis, need to know *behaviour* of test statistic
+    + Compare statistic to its *sampling distribution* under hypothesis
+    
+
+## Null & Alternative Hypotheses 
+
+- For every claim there are two competing hypotheses: the claim and its opposite
+    + E.g. proposal will pass vs it will *not* pass
+
+- **Null Hypothesis** ($H_0$): *Reference* hypothesis, representing baseline or status quo 
+    + Used for deriving test's sampling distribution 
+
+- **Alternative Hypothesis** ($H_A$ or $H_1$): Opposite of $H_0$
+     + Almost always corresponds to claim of interest
+
+
+## Data Tribunal
+
+- Hypothesis testing resembles legal trial
+    + *Presume* innocence
+    + Present *evidence*; if it is inconsistent with innocence, declare guilty
+    + *Burden of proof is on showing guilt*
+
+- Similarly in a hypothesis test
+    + *Presume* null hypothesis ($H_0$) is true 
+    + Collect data; if *test statistic* is inconsistent with $H_0$, reject it and adopt $H_A$
+    + *Burden of proof is on alternative*  
+
+## Example
+
+- Out of SRS of 100 individuals, 59 are in favor of proposal 
+    + Want to know if proposal will pass referendum
+    
+- $H_0: p \leq .5$ vs $H_A: p>.5$
+    + $p$ is (population) proportion in favor
+
+- Test statistic is **sample** proportion $\hat{p} = .59$ 
+     - Compare to sampling distribution under borderline value ($p=.5$)
+
+
+## Example
+
+- Approximate sampling distribution under $H_0$ ($p=.5$) by simulating 1,000 test statistic values
+
+```{r, collapse = TRUE}
+sim = tibble( value = replicate( 1000,sample( 0:1, 100, replace = TRUE ) %>% mean() ) ) 
+sim
+```
+
+## Example 
+
+```{r, echo = FALSE, results='hide',message=FALSE, fig.width=7, fig.height=5}
+sim %>% ggplot(aes(x = value)) + geom_histogram(bins = 30)  + 
+  geom_vline(xintercept = .59) + xlab( "proportion in favor" )
+```
+
+
+## P-value
+
+- **P-value**: probability that sampling distribution under $H_0$ gives values *at least as favorable* to $H_A$ as observed statistic 
+    + Lower P-value $\rightarrow$ data less *consistent* with $H_0$ 
+
+![](./img/pvalue_1side.PNG)
+
+- Compare P-value to *predetermined* cut-off, called **significance level** ($\alpha$)
+    + "Typical" value of $\alpha = .05 = 1/20$ 
+    + If P-value $< \alpha \rightarrow$  reject $H_0$ & accept $H_A$ 
+
+
+## P-value Guidelines 
+
+
+- Typical interpretation of P-values
+
+| Range | Compatibility with $H_0$ | 
+|---|---|
+| P-value > 0.10 |	no evidence against $H_0$ |
+| 0.05 < P-value < 0.10	| weak evidence against $H_0$ |
+| 0.01 < P-value < 0.05	| moderate evidence against $H_0$ |
+| 0.001 < P-value < 0.01 | strong evidence against $H_0$ |
+| P-value < 0.001	| very strong evidence against $H_0$ |
+
+
+
+## Example
+
+- P-value for hypothesis test 
+```{r, collapse = TRUE}
+sim %>% summarise( mean( value >= .59 ) ) %>% pull()
+```
+- Reject $H_0$ at $\alpha = 5\%$ significance level $\Rightarrow$ conclude proposal will pass (go with $H_A$)
+
+- What would happen if 
+     + $\alpha = .01$?
+     + $H_0: p \geq .5$ vs $H_A: p < .5$?
+
+## Two-Sided tests
+
+- In certain cases want to test against *both* directions of alternative
+    + E.g. test if coin-tossing is *fair*, i.e. proportion of heads is 50%
+    + Two-sided hypothesis: $H_0: p = .5$ vs $H_A: p \neq .5$  
+
+- Similar approach, but calculate P-value as probability of equal or more extreme *absolute distance* from hypothesized value 
+
+![](./img/pvalue_2side.PNG)
+
+
+## Example
+
+- Flip coin 500 times and get 267 heads; is there evidence of bias at 5% significance level?
+
+```{r, collapse = TRUE}
+set.seed(123)
+sim = replicate( 1000, sample( 0:1, 500, replace = TRUE ) %>% mean() ) 
+(P_value = mean( abs(sim - .5) >= (276/500 - .5) ))
+```
+
+- FYI, coin flipping is [*not exactly fair*](https://econ.ucsb.edu/~doug/240a/Coin%20Flip.htm)
+    
+
+
+## Comparisons 
+
+- Hypothesis tests are commonly used for **comparisons**, typically of averages or proportions
+     + E.g. are women paid differently than men?
+     
+- Hypothesis can be expressed it terms of parameter **difference**
+    + E.g. $H_A: \mu_W \neq \mu_M \Leftrightarrow H_A:\mu_W-\mu_M \neq 0$
+
+- Use *sample difference* in averages/proportions as *test statistic* 
+    
+
+## Randomization Test
+
+- Under null hypothesis, parameters of two groups (1 & 2) are equal   
+    + $H_0: \mu_1 = \mu_2$ or $H_0: p_1=p_2$
+
+- Idea: if populations are similar, then group information *does not matter* 
+
+- **Randomization/Permutation test**: approximate sampling distribution under $H_0$ by repeatedly shuffling groups randomly and calculating their difference
+
+
+## Example
+
+
+- Are women paid differently than men?
+    + $H_0: \mu_W - \mu_M = 0$ vs $H_A: \mu_W - \mu_M \neq 0$
+
+```{r, fig.width=6, fig.height=4, echo=FALSE, warning=FALSE, message=FALSE}
+lfs = read_csv('../data/LFS_Toronto.csv') 
+lfs %>% filter( educ == 5) %>% 
+  mutate( sex = factor(sex, levels = 1:2, labels = c("M","F"))) %>% 
+  ggplot( aes(x = sex, y = hrlyearn) ) +
+  geom_boxplot()
+
+```
+
+## Example
+
+- Run permutation test using `coin` package
+    + `independence_test()` for hypothesis test 
+    + $H_0$: no difference in `hrlyearn` for different `sex` 
+```{r, message = FALSE, warning = FALSE, collapse = TRUE}
+library(coin)
+lfs %>% filter( educ == 5) %>% 
+  mutate( sex = factor(sex, levels = 1:2, labels = c("M","F")) ) %>% 
+  independence_test( hrlyearn ~ sex, data = ., 
+      alternative = "two.sided", distribution = "approximate" )
+```

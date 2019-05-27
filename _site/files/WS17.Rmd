@@ -1,0 +1,30 @@
+***
+
+**Goal**: Practice binary classification w/ thresholding, and measure classifier performance.
+
+```{r setup, include=FALSE}
+library(tidyverse)
+wdbc = read_csv("data/wdbc.csv")
+```
+
+
+1. Replicate the plot below, showing colored histograms of the 10 mean features (variables ending in `.m`). 
+
+![](img/histograms.PNG) 
+
+
+2. Based on the histograms, pick a variable that would make a good classifier feature (but *not* smoothness.m). Use the plot to find a good threshold value, and report the *confusion matrix* for your classifier.
+
+3. What is the accuracy and F1-measure of your classifier?
+
+4. Plot the ROC curve of your classifier. 
+
+5. *Overlay* the ROC curves from thresholding the feature you selected and smoothness.m. Based on your plot, would you use smoothness.m or the feature variable you selected?
+(Hint: use `ggroc( list(ROC_1, ROC_2) )`, providing a list of `roc()` outputs)
+
+6. Find the best feature (out of all 30) for threshold classification, using the *area under curve* criterion (`auc()`). Plot the coloured histogram and the ROC curve of the best feature.
+
+7. Compare the ROC curves of the features you selected from the previous two parts. Which one would you use?
+
+8. Would you ever use a classifier that has TPR = .5 and FPR = .6? Justify your answer.
+

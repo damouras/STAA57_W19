@@ -1,0 +1,205 @@
+<!-- 
+output: html_notebook 
+
+output:
+  ioslides_presentation:
+    transition: 0
+    logo: img/logo.png
+-->
+
+
+```{r setup, include=FALSE}
+library(tidyverse)
+# install.packages("pROC")
+library(pROC)
+```
+
+## Lecture Goals 
+
+- Perform binary classification w/ thresholding  
+- Measure classifier performance using  
+    + *Confusion matrix*   
+    + *ROC* curves  
+
+
+- Readings:
+    + [ISLR](http://www-bcf.usc.edu/~gareth/ISL/) ch. 4.1 
+
+
+## Wisconsin Diagnostic Breast Cancer (WDBC) Data 
+
+- Fine-Needle Aspiration (FNA) data on 569 patients 
+    + 212 w/ malignant & 357 w/ benign tumors
+    + (available from [UCI data repository](https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+(Diagnostic))): 
+    
+- FNA biopsy withdraws small amount of tissue/fluid from suspicious area
+    + Biopsy sample checked for cancer cells
+    
+## WDBC Data 
+
++ Calculate tumor cell *features* based on FNA images
+
+![](img/tumor_cell.PNG)
+
+
+
+## WDBC Features
+
+- For each cell, calculate
+    1. *radius* (mean distance from center to perimeter) 
+    2. *texture* (standard deviation of gray-scale values) 
+    3. *perimeter* 
+    4. *area* 
+    5. *smoothness* (local variation in radius lengths) 
+    6. *compactness* (perimeter^2 / area - 1.0) 
+    7. *concavity* (severity of concave portions of contour) 
+    8. *concave points* (number of concave portions of contour) 
+    9. *symmetry* 
+    10. *fractal dimension* 
+
+## WDBC Features
+
+- For each image (group of cells) report
+    1. *mean* (`.m`) 
+    2. *standard deviation* (`.se`)
+    3. *worst* value (`.w`)
+
+
+- In total, 3 x 10 = 30 features
+
+## WDBC Data
+
+```{r, message=FALSE}
+wdbc = read_csv("data/wdbc.csv")
+glimpse(wdbc)
+```
+
+## Classification 
+
+- Create system that predicts *label* $Y$ based on *feature* variables $X_1, \ldots, X_p$   
+    + Called *binary* classification when $Y$ takes only 2 values 
+    
+- Find function $f(\cdot)$ such that $f(X_1,...,X_p) = \hat{Y} \sim Y$ ![](img/black_box.PNG)
+
+- Several methods to arrive at $f(\cdot)$
+     + some work better than others on certain problems
+    
+
+## Threshold Classification
+
+- Mean cell smoothness is indicative of cancer
+
+```{r, warning= F, fig.height=3, fig.width =5}
+wdbc %>% ggplot(aes(x = smoothness.m, fill = diagnosis )) + 
+  geom_histogram(position = "dodge", bins=30) + 
+  geom_vline(xintercept = 3) + scale_x_log10()
+```
+
+
+## Classification Accuracy 
+
+- **Accuracy**: proportion of *correct* predictions 
+    + Does not differentiate classes (all equally important)
+    
+- Compare to *naive* majority classifier
+    + For WDBC, predict benign
+```{r, collapse = TRUE}
+wdbc %>% mutate( naive = "B",
+  predicted = ifelse( smoothness.m > 3, "M", "B")) %>%  
+  summarise( acc.pred = mean(predicted == diagnosis),
+             acc.naiv = mean(naive == diagnosis) )
+```
+
+
+## Confusion Matrix
+
+- [**Confusion matrix**](https://en.wikipedia.org/wiki/Confusion_matrix) is more nuanced performance measure
+     + Assuming class of interest is *positive* 
+
+|  | Actual Positive  | Actual Negative | Sum |
+|---|---|---|---|
+| Predict Positive |  True Positive ($TP$) | False Positive ($FP$) | $PP = TP+FP$| 
+| Predict Negative |  False Negative ($FN$) | True Negative ($TN$) | $PN = FN + TN$ |
+| Sum | $P = TP + FN$ | $N = FP+TN$ |  |
+
+<br>
+- What would be Type I/II Error in hypothesis testing?
+
+## Confusion Matrix
+
+```{r, echo = FALSE, fig.height=5, fig.width =7}
+N=100; x = seq( -6, 6, length.out = N)
+tibble( X = rep(x,2), density = c( dnorm(x,2,2), dnorm(x,-2,2) ),
+            Y = c( rep("+",N), rep("-",N))  ) %>% 
+ggplot(aes(x = X, y = density, fill = Y )) + 
+  geom_density(stat = "identity", alpha=.3) + 
+  geom_vline(xintercept = 0) +
+  geom_text( x = -1., y = .02, label = "FN", col="red") +
+  geom_text( x =  1., y = .02, label = "FP", col="red") +
+  geom_text( x = -2.5, y = .1, label = "TN", col="red") +
+  geom_text( x =  2.5, y = .1, label = "TP", col="red") 
+  
+```
+
+
+## Example 
+```{r, collapse = TRUE}
+wdbc %>%  
+  mutate( predicted = ifelse( smoothness.m > 3, "M", "B") ) %>% 
+  mutate( predicted = fct_relevel(predicted, "M"),
+          diagnosis = fct_relevel(diagnosis, "M") ) %>% 
+  xtabs( ~ predicted + diagnosis, data = .) %>% addmargins()
+```
+
+## Classifier Performance
+
+- **Sensitivity/Recall/True Positive Rate (TPR)**: $TP/P$
+- **Precision/Positive Predictive Value (PPV)**: $TP/PP$ 
+- **Specificity/True Negative Rate (TNR)**: $TN/N$
+- **False Positive Rate (FPR)**: = $FP / N = 1-TNR$
+
+
+- **F1-measure**: $2\frac{ Sens. \times Prec.}{Sens. + Prec.}$
+    + Closer to 1 is better
+
+## ROC curve
+- **ROC curve**: plot of FPR vs TPR for *all possible thresholds* (configurations) of binary classifier
+
+
+```{r, echo=FALSE, warning=FALSE, }
+roc(diagnosis ~ smoothness.m,  data = wdbc) %>% 
+  .[c("sensitivities", "specificities")] %>%  as_tibble() %>% 
+  mutate( FPR = 1-specificities, TPR = sensitivities) %>% arrange(TPR) %>% 
+  ggplot( aes(x = FPR, y = TPR)) + geom_line() + 
+  scale_x_continuous(limits = c(0,1)) + scale_y_continuous(limits = c(0,1)) + 
+  coord_fixed() + geom_abline(slope = 1, lty=2) + 
+  geom_text(x=.55, y=.5,label = "random", col="red", angle = 45) + 
+  geom_text(x=.05, y=.95,label = "better",col="red") +
+  geom_text(x=.95, y=.05,label = "worse", col="red") +
+  geom_text(x=.9, y=.97,label = "lenient", col="red") +
+  geom_text(x=.1, y=.03,label = "strict", col="red") 
+```
+
+## Example
+
+```{r, warning=FALSE, fig.height=4, fig.width=4 }
+library(pROC)
+ROC_out = roc(diagnosis ~ smoothness.m,  data = wdbc)
+ggroc(ROC_out)  
+```
+
+
+## ROC curve
+
+- Classifiers with ROC curve *above and to the left* are *better*
+    + Compare classifiers *irrespective* of threshold
+    + Difficult to compare curves that cross
+    
+- *Area under curve* (AUC) used as a proxy for classifier performance 
+    
+```{r}
+auc(diagnosis ~ smoothness.m,  data = wdbc) # auc(ROC_out)
+```
+ 
+ 
+

@@ -1,0 +1,31 @@
+```{r setup, include=FALSE}
+library(tidyverse)
+library(gapminder)
+```
+
+**Goal**: Practice working with string data and regular expressions.
+
+
+Use the *dinesafe* data for all questions. 
+```{r}
+library(tidyverse)
+dinesafe = read_csv("../data/dinesafe.csv")
+```
+
+
+1. Find all distinct establishments that contain the word "kebab" or its variations "kabob", "kabab", "kebob" in their name. Use a *single regular expression* for all variations, and consider both cases (upper & lower).
+
+
+2. Find all distinct establishments that contain the *exact word* "pho" in their name (in either case). Ensure your regular expression excludes words that just *contain* the string "pho", such as "cho**pho**use". 
+
+Some of the `INFRACTION_DETAILS` entries contain a reference to the relevant regulation that was broken. It typically appears at the end of the string and looks like this "o. reg  562/90 sec. 74(c)". This refers to Ontario Regulation 562/1990 revision, section 74(c), which you can view at https://www.ontario.ca/laws/regulation/900562.
+
+
+3. Find what *proportion* of infraction details contain a reference to Ontario Regulation 562/90. You will have to  formulate a regular expression that detects the presence of such a reference. 
+
+
+4. Extract the relevant *section number* for all infractions that refer to Ontario regulation 562/90. Use this information to create a frequency barplot of the number of infractions by section.
+
+
+5. For each distinct `ESTABLISHMENT_ID`, combine all non-NA `INFRACTION_DETAILS` into a single string. Then count the number of times the word "contamination" appears in each establishment's combined infraction details. Create a barplot of the top-10 contamination offenders (i.e. establishment name vs number of occurances of word "contamination"). 
+

@@ -1,0 +1,32 @@
+***
+
+**Goal**: Practice estimation and the bootstrap.
+
+```{r, include=FALSE}
+library(tidyverse)
+```
+
+Use the Labour Fource Survey (LFS) data for Toronto.
+```{r}
+lfs = read_csv('./data/LFS_Toronto.csv') 
+```
+
+1. Give point estimates of the unemployment rate broken down by education level (variable `educ`; see  [codebook](http://sda.chass.utoronto.ca/sdaweb/dli2/lfsv6/2018/doc/lfsv.htm) ). The answer should give an unemployment rate for each  education level.
+
+2. Use the `infer` package to generate 500 bootstrap samples for the BSc education level (`educ == 5`), and calculate their unemployment rate. 
+
+3. Use your boostrap samples to create a *histogram* of the sampling distribution of the BSc-level unemployment rate. Overlay the value of the point estimate as a vertical line (`geom_vline()`).
+
+4.Use your boostrap samples to create a *quantile-based* 90% confidence interval for the BSc unemployment rate.
+
+5. Going back to the original LFS data, focus on currently working individuals (`lfsstat == 1`) with a BSc degree (`educ == 5`), and estimate the BSc-level average hourly earnings (`hrlyearn`) for each `sex` (1=MALE, 2=FEMALE). Note that there are missing values (`NA`) in earnings, which you can remove from your analysis. What is a potential sampling problem with the missing values?
+
+6. Assume you wanted to create a bootstrap CI around each mean hourly earnings. Would you resample from each sex separately, or from both sexes combined? Justify your answer. 
+
+7. Use bootstrap sampling with 500 iterations *for each sex separately*, to create *standard error-based* 95% CI's for the mean hourly earnings. 
+
+8. [EXTRA] The final weight variable (`fweight`) provides a number corresponding to the size of the population represented by that particular observation. E.g. if you were randomly sampling 20 observations from a population of size 1,000, each observation would receive an equal weight of 50 (=1,000/20). Differences in `fweight` reflect varying coverage of different geographic areas in the survey.   
+Estimate the *total number* of working individuals (`lfsstat==1`) in the month of Nov. 2018 (`survmnth==11`) for different education levels, by summing up their `fweight` values. Plot your estimates in a barplot like the one below:
+
+![](./img/Nworking_educ.PNG)
+
